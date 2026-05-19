@@ -4,7 +4,7 @@ services:
   app:
 # ホストマシン側にデータを永続化するためにvolumesを使う
     volumes:
-      - .:/app
+      - ./app:/app
   # buildは現在のdirのDockerfileを使ってビルドする
     build:  .
     ports:
@@ -13,16 +13,17 @@ services:
       -  .env
     depends_on:
       db:
-        condition: service_heatlthy
+        condition: service_healthy
 
   db:
-      healthcheck:
+    image: postgres
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-      image: postgres
-      environment:
-        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-        POSTGRES_DB: ${POSTGRES_DB}
+      
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
