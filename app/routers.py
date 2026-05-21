@@ -6,12 +6,13 @@ from sqlalchemy.orm import Session
 import crud
 import schemas
 import auth
-from fastapi.security import OAuth2PasswordRequestForm
+import services
+from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
 from fastapi import Depends
 
 
 
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 router = APIRouter()
 
@@ -24,28 +25,42 @@ def get_db():
         db.close()
 
 
-@router.post("/users")
+
+async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    email = auth.verify_token(token)
+    user = crud.get_user_by_email(db,email)
+    if not user:
+        raise HTTPException(status_code=401, detail="ユーザーが存在しません")
+    return user
+
+
+@router.post("/users", response_model=schemas.UserResponse)
 async def create_user_endpoint(user:schemas.UserCreate, db: Session = Depends(get_db)):
-    return crud.create_user(db,user)
+    return services.create_user(db,user)
 
 
-@router.get("/users/{user_id}")
-async def get_user_endpoint(user_id: int, db: Session = Depends(get_db)):
+@router.get("/users/{user_id}", response_model=schemas.UserResponse)
+async def get_user_endpoint(user_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="権限がありません")
     return crud.get_users(db,user_id)
 
 
-@router.patch("/users/{user_id}")
-async def update_user_endpoint(user_id: int, user: schemas.UserCreate, db: Session = Depends(get_db)):
-    return crud.update_user(db,user,user_id)
+@router.patch("/users/{user_id}", response_model=schemas.UserResponse)
+async def update_user_endpoint(user_id: int, user: schemas.UserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="権限がありません")
+    return services.update_user(db,user,user_id)
 
 @router.delete("/users/{user_id}")
-async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
-    crud.delete_user(db,user_id)
+async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db),  current_user = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="権限がありません")crud.delete_user(db,user_id)
     return {"message":"deleted"}
 
 
 
-@router.post("/login")
+@router.post("/auth/login")
 async def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db,form_data.username)
 
