@@ -35,10 +35,14 @@ DELETE  /users/{id}  ユーザー削除
 POST    /auth/login  ログイン
 GET     /users/me    ログイン中のユーザー取得
 
-
 POST    /transactions          収支登録
-GET     /transactions/summary  収支集計取得
-GET     /transactions          収支一覧取得
+GET /transactions/summary  収支集計取得
+    クエリパラメータ:
+      type: monthly | weekly
+      year: 年（例: 2025）
+      month: 月（monthlyのとき必須）
+      week: 週番号（weeklyのとき必須）
+GET     /transactions?page=1&limit=20   収支一覧取得
 PATCH　 /transactions/{id}     収支更新
 DELETE  /transactions/{id}     収支削除
 

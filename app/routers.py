@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-import schemas
+from schemas import UserCreate,TransactionCreate,UserResponse
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -34,20 +34,20 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
     return user
 
 
-@router.post("/users", response_model=schemas.UserResponse)
-async def create_user_endpoint(user:schemas.UserCreate, db: Session = Depends(get_db)):
+@router.post("/users", response_model=UserResponse)
+async def create_user_endpoint(user:UserCreate, db: Session = Depends(get_db)):
     return services.create_user(db,user)
 
 
-@router.get("/users/{user_id}", response_model=schemas.UserResponse)
+@router.get("/users/{user_id}", response_model=UserResponse)
 async def get_user_endpoint(user_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.id != user_id:
         raise HTTPException(status_code=403, detail="権限がありません")
     return crud.get_users(db,user_id)
 
 
-@router.patch("/users/{user_id}", response_model=schemas.UserResponse)
-async def update_user_endpoint(user_id: int, user: schemas.UserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+@router.patch("/users/{user_id}", response_model=UserResponse)
+async def update_user_endpoint(user_id: int, user: UserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     if current_user.id != user_id:
         raise HTTPException(status_code=403, detail="権限がありません")
     return services.update_user(db,user,user_id)
@@ -55,7 +55,8 @@ async def update_user_endpoint(user_id: int, user: schemas.UserCreate, db: Sessi
 @router.delete("/users/{user_id}")
 async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db),  current_user = Depends(get_current_user)):
     if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="権限がありません")crud.delete_user(db,user_id)
+        raise HTTPException(status_code=403, detail="権限がありません")
+    crud.delete_user(db,user_id)
     return {"message":"deleted"}
 
 
@@ -72,3 +73,36 @@ async def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), 
 
     token = auth.create_access_token({"sub":db_user.email})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/transactions")
+async def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    return crud.create_transaction(db, current_user.id, transaction)
+
+
+@router.get("/transactions")
+async def get_transaction_endpoint(page: int, limit: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_transaction = crud.get_transactions(db,current_user.id,page,limit)
+
+    if not db_transaction:
+        raise HTTPException(status_code=404, detail="データがありません")
+    return db_transaction
+
+@router.get("/transactions/summary")
+async def get_transactions_summary_endpoint(
+    type: str,
+    year: int,
+    month: int | None = None,
+    week: int | None = None,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return services.get_transactions_summary(db,current_user.id,type,year,month,week)
+
+@router.patch("/transactions/{transaction_id}")
+async def update_transaction_endpoint(transaction: TransactionCreate, transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    return crud.update_transaction(db,current_user.id,transaction_id,transaction)
+
+@router.delete("/transactions/{transaction_id}")
+async def delete_transaction_endpoint(transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    return crud.delete_transaction(db,current_user.id,transaction_id)
