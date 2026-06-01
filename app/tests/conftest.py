@@ -20,6 +20,7 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
+# テストクライアントを渡す関数
 @pytest.fixture
 def client():
     Base.metadata.create_all(bind=engine)

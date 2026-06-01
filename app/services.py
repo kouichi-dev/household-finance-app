@@ -19,7 +19,7 @@ def update_user(db,user,user_id):
 
 def get_transactions_summary(db,user_id,type,year,month,week):
 
-    if not year:
+    if year is None:
         raise HTTPException(status_code=422, detail="年の入力がありません")
     if type == 'monthly' and not month:
         raise HTTPException(status_code=422, detail="月の入力がありません")

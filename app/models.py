@@ -1,7 +1,7 @@
 
 from database import Base
 from sqlalchemy import Column,Integer,String,ForeignKey,DateTime
-
+from datetime import datetime
 
 
 class User(Base):
@@ -19,7 +19,7 @@ class Transaction(Base):
     amount = Column('amount',Integer)
     description = Column('description',String(50),nullable=True)
     type = Column('type',String(10))
-    created_at = Column('created_at',DateTime)
+    created_at = Column('created_at',DateTime,default=datetime.now)
     
 
 class Category(Base):

@@ -81,7 +81,7 @@ async def create_transaction_endpoint(transaction: TransactionCreate, current_us
 
 
 @router.get("/transactions")
-async def get_transaction_endpoint(page: int, limit: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_transaction_endpoint(page: int = 1, limit: int = 20, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     db_transaction = crud.get_transactions(db,current_user.id,page,limit)
 
     if not db_transaction:
