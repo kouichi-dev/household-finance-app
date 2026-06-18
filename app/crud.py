@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import User,Transaction,Category
-from schemas import UserCreate,TransactionCreate,TransacionSummary,CategoryCreate
+from schemas import UserCreate,TransactionCreate,TransactionSummary,CategoryCreate
 from fastapi import HTTPException
 
 

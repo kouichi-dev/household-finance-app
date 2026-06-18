@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,TransactionCreate,UserResponse,CategoryCreate
+from schemas import UserCreate,TransactionCreate,UserResponse,CategoryCreate,SummaryType
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -88,13 +88,11 @@ async def create_transaction_endpoint(transaction: TransactionCreate, current_us
 async def get_transaction_endpoint(page: int = 1, limit: int = 20, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     db_transaction = crud.get_transactions(db,current_user.id,page,limit)
 
-    if not db_transaction:
-        raise HTTPException(status_code=404, detail="データがありません")
     return db_transaction
 
 @router.get("/transactions/summary")
 async def get_transactions_summary_endpoint(
-    type: str,
+    type: SummaryType,
     year: int,
     month: int | None = None,
     week: int | None = None,

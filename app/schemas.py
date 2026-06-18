@@ -38,7 +38,7 @@ class SummaryType(str, Enum):
     monthly = 'monthly'
     weekly = 'weekly'
 
-class TransacionSummary(BaseModel):
+class TransactionSummary(BaseModel):
     type: SummaryType
     year: int
     month: int | None = None
