@@ -38,6 +38,9 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
 async def create_user_endpoint(user:UserCreate, db: Session = Depends(get_db)):
     return services.create_user(db,user)
 
+@router.get("/users/me",response_model=UserResponse)
+async def get_current_user_endpoint(current_user = Depends(get_current_user)):
+    return current_user
 
 @router.get("/users/{user_id}", response_model=UserResponse)
 async def get_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
@@ -73,6 +76,7 @@ async def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), 
 
     token = auth.create_access_token({"sub":db_user.email})
     return {"access_token": token, "token_type": "bearer"}
+
 
 
 @router.post("/transactions")
