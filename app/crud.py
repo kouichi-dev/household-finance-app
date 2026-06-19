@@ -2,16 +2,21 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category
 from schemas import UserCreate,TransactionCreate,CategoryCreate
-from fastapi import HTTPException
+from exceptions import EmailAlreadyExistsError
 from datetime import date
 
 
 def create_user(db: Session, user: UserCreate):
     db_user = User(name=user.name,email=user.email,password=user.password)
     db.add(db_user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise EmailAlreadyExistsError()
     db.refresh(db_user)
     return db_user
 
@@ -21,18 +26,22 @@ def get_users(db: Session, user_id: int):
 def update_user(db: Session, user:UserCreate, user_id: int):
     db_user = db.query(User).filter(User.id==user_id).first()
     if not db_user:
-        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+        return None
     db_user.name=user.name
     db_user.email=user.email
     db_user.password=user.password
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise EmailAlreadyExistsError()
     db.refresh(db_user)
     return db_user
 
 def delete_user(db: Session, user_id: int):
     db_user = db.query(User).filter(User.id==user_id).first()
     if not db_user:
-        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+        return None
     db.delete(db_user)
     db.commit()
 
@@ -84,7 +93,7 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int):
 def update_transaction(db: Session, user_id: int, transaction_id: int, transaction: TransactionCreate):
     db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id,Transaction.id==transaction_id).first()
     if not db_transaction:
-        raise HTTPException(status_code=404, detail="内容がありません")
+        return None
     db_transaction.amount=transaction.amount
     db_transaction.type=transaction.type
     db_transaction.description=transaction.description
@@ -96,7 +105,7 @@ def update_transaction(db: Session, user_id: int, transaction_id: int, transacti
 def delete_transaction(db: Session, user_id: int, transaction_id: int):
     db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id,Transaction.id==transaction_id).first()
     if not db_transaction:
-        raise HTTPException(status_code=404, detail="内容がありません")
+        return None
     db.delete(db_transaction)
     db.commit()
     return db_transaction
@@ -116,7 +125,7 @@ def get_categories(db: Session, user_id: int):
 def update_category(db: Session, user_id: int, category_id: int, category: CategoryCreate):
     db_category = db.query(Category).filter(Category.user_id==user_id,Category.id==category_id).first()
     if not db_category:
-        raise HTTPException(status_code=404, detail="内容がありません")
+        return None
     db_category.name=category.name
     db.commit()
     db.refresh(db_category)
@@ -125,7 +134,7 @@ def update_category(db: Session, user_id: int, category_id: int, category: Categ
 def delete_category(db: Session, user_id: int, category_id: int):
     db_category = db.query(Category).filter(Category.user_id==user_id,Category.id==category_id).first()
     if not db_category:
-        raise HTTPException(status_code=404, detail="内容がありません")
+        return None
     db.delete(db_category)
     db.commit()
     return db_category
