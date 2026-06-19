@@ -39,6 +39,7 @@ docker-compose up --build
 | PATCH | /users/{id} | ユーザー更新 | 必要 |
 | DELETE | /users/{id} | ユーザー削除 | 必要 |
 | POST | /auth/login | ログイン（JWTトークン発行） | 不要 |
+| GET | /users/me | ログイン中のユーザー取得 | 必要 |
 
 ### 収支
 | メソッド | パス | 説明 | 認証 |
