@@ -5,6 +5,7 @@ from sqlalchemy import func
 from models import User,Transaction,Category
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from fastapi import HTTPException
+from datetime import date
 
 
 def create_user(db: Session, user: UserCreate):
@@ -49,7 +50,8 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
         amount=transaction.amount,
         type=transaction.type,
         description=transaction.description,
-        category_id=transaction.category_id)
+        category_id=transaction.category_id,
+        transaction_date=transaction.transaction_date)
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
@@ -58,18 +60,18 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
 def get_transactions_summary(db: Session, user_id: int, year: int | None, month: int | None, week: int | None):
     query = db.query(Transaction).filter(
         Transaction.user_id==user_id,
-        func.extract('year',Transaction.created_at) == year
+        func.extract('year',Transaction.transaction_date) == year
     )
 
 
     if month is not None:
         query = query.filter(
-            func.extract('month',Transaction.created_at) == month
+            func.extract('month',Transaction.transaction_date) == month
         )
     
     if week is not None:
         query = query.filter(
-            func.extract('week',Transaction.created_at) == week
+            func.extract('week',Transaction.transaction_date) == week
         )
     
     return query.all()

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
-from datetime import datetime
+from datetime import datetime,date
 
 class UserCreate(BaseModel):
     name: str
@@ -19,6 +19,7 @@ class TransactionType(str, Enum):
 class TransactionCreate(BaseModel):
     amount: int
     type: TransactionType
+    transaction_date: date
     description: str | None = None
     category_id: int | None = None
 
@@ -29,6 +30,7 @@ class TransactionResponse(BaseModel):
     description: str | None = None
     category_id: int | None = None
     created_at: datetime
+    transaction_date: date
 
 class SummaryType(str, Enum):
     monthly = 'monthly'

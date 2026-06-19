@@ -42,6 +42,7 @@
       - year: 年（例: 2025）
       - month: 月（monthlyのとき必須）
       - week: 週番号（weeklyのとき必須）
+    - 集計の基準: transaction_date（取引日）の年/月/週で集計する
     - レスポンス:
       - { "income": 収入合計, "expense": 支出合計, "balance": 収支差額(income - expense) }
 
@@ -75,6 +76,7 @@
 - amount INTEGER NOT NULL
 - description VARCHAR(50) NULLABLE
 - type VARCHAR(10) NOT NULL CHECK(type IN ('income', 'expense'))
+- transaction_date DATE NOT NULL
 - created_at TIMESTAMP NOT NULL
 
 ### categoriesテーブル
