@@ -36,5 +36,7 @@ def get_transactions_summary(db,user_id,type,year,month,week):
             income_total += t.amount
         elif t.type == 'expense':
             expense_total += t.amount
+    
+    balance = income_total - expense_total
 
-    return {"income": income_total, "expense": expense_total}
+    return {"income": income_total, "expense": expense_total, "balance": balance}

@@ -42,6 +42,9 @@
       - year: 年（例: 2025）
       - month: 月（monthlyのとき必須）
       - week: 週番号（weeklyのとき必須）
+    - レスポンス:
+      - { "income": 収入合計, "expense": 支出合計, "balance": 収支差額(income - expense) }
+
 - GET     /transactions?page=1&limit=20   収支一覧取得
 - PATCH　 /transactions/{id}     収支更新
 - DELETE  /transactions/{id}     収支削除
