@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 from pydantic import BaseModel
 from enum import Enum
 
@@ -33,12 +25,6 @@ class TransactionCreate(BaseModel):
 class SummaryType(str, Enum):
     monthly = 'monthly'
     weekly = 'weekly'
-
-class TransactionSummary(BaseModel):
-    type: SummaryType
-    year: int
-    month: int | None = None
-    week: int | None = None
 
 class CategoryCreate(BaseModel):
     name: str
