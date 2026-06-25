@@ -32,6 +32,16 @@ def update_user(db,user,user_id):
     return updated
 
 
+def login_user(db, username, password):
+    db_user = crud.get_user_by_email(db, username)
+    if not db_user:
+        raise HTTPException(status_code=401, detail="ユーザーが存在しません")
+    
+    if not auth.verify_password(password,db_user.password):
+        raise HTTPException(status_code=401, detail="パスワードが一致しません")
+    return auth.create_access_token({"sub": db_user.email})
+
+
 def get_transactions_summary(db,user_id,type,year,month,week):
 
     if year is None:

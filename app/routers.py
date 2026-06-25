@@ -66,15 +66,8 @@ async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db),  cur
 
 @router.post("/auth/login")
 async def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db,form_data.username)
 
-    if not db_user:
-        raise HTTPException(status_code=401, detail="ユーザーが存在しません")
-    
-    if not auth.verify_password(form_data.password,db_user.password):
-        raise HTTPException(status_code=401, detail="パスワードが一致しません")
-
-    token = auth.create_access_token({"sub":db_user.email})
+    token = services.login_user(db, form_data.username, form_data.password)
     return {"access_token": token, "token_type": "bearer"}
 
 
