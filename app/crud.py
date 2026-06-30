@@ -8,6 +8,7 @@ from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError
 from datetime import date
 
+# user_crud
 
 def create_user(db: Session, user: UserCreate):
     db_user = User(name=user.name,email=user.email,password=user.password)
@@ -52,6 +53,8 @@ def delete_user(db: Session, user_id: int):
 def get_user_by_email(db: Session,email: str):
     return db.query(User).filter(User.email==email).first()
 
+# transaction_crud
+
 
 def create_transaction(db: Session, user_id: int, transaction: TransactionCreate):
     db_transaction = Transaction(
@@ -87,7 +90,12 @@ def get_transactions_summary(db: Session, user_id: int, year: int | None, month:
 
 def get_transactions(db: Session, user_id: int, page: int, limit: int):
     offset = (page - 1) * limit
-    return db.query(Transaction).filter(Transaction.user_id == user_id).offset(offset).limit(limit).all()
+    return (
+        db.query(Transaction)
+        .filter(Transaction.user_id == user_id)
+        .order_by(Transaction.id)
+        .offset(offset).limit(limit).all()
+    )
 
 
 def update_transaction(db: Session, user_id: int, transaction_id: int, transaction: TransactionCreate):
