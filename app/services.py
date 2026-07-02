@@ -73,7 +73,11 @@ def get_transactions_summary(db, user_id, type, year, month, week):
     return {"income": income_total, "expense": expense_total, "balance": balance}
 
 def get_user(db, user_id):
-    return crud.get_users(db, user_id)
+    db_user = crud.get_users(db, user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+    return db_user
+
 
 def delete_user(db, user_id):
     if crud.delete_user(db, user_id) is None:
