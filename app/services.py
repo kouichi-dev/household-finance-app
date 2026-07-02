@@ -61,18 +61,11 @@ def get_transactions_summary(db, user_id, type, year, month, week):
             end = date.fromisocalendar(year, week, 7)    # ISO週の日曜
         except ValueError:
             raise HTTPException(status_code=422, detail="指定の週は存在しません")
+        
+    row = crud.get_transactions_summary(db, user_id, start, end)
+    balance = row.income - row.expense
+    return {"income": row.income, "expense": row.expense, "balance": balance}
 
-    transactions = crud.get_transactions_summary(db, user_id, start, end)
-
-    income_total = 0
-    expense_total = 0
-    for t in transactions:
-        if t.type == 'income':
-            income_total += t.amount
-        elif t.type == 'expense':
-            expense_total += t.amount
-    balance = income_total - expense_total
-    return {"income": income_total, "expense": expense_total, "balance": balance}
 
 def get_user(db, user_id):
     db_user = crud.get_users(db, user_id)

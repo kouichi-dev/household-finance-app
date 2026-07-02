@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError
+from sqlalchemy import func, case
 
 
 # user_crud
@@ -70,14 +71,18 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
 
 def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
     return (
-        db.query(Transaction)
+        db.query(
+            func.coalesce(func.sum(case((Transaction.type == 'income', Transaction.amount), else_=0)), 0).label("income"),
+            func.coalesce(func.sum(case((Transaction.type == 'expense', Transaction.amount), else_=0)), 0).label("expense"),
+        )
         .filter(
             Transaction.user_id == user_id,
             Transaction.transaction_date >= start_date,
             Transaction.transaction_date <= end_date,
         )
-        .all()
+        .first()
     )
+
 
 
 def get_transactions(db: Session, user_id: int, page: int, limit: int):

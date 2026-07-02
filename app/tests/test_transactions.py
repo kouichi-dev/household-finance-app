@@ -135,3 +135,11 @@ def test_収支部分更新_amountだけ(client, auth):
     assert r.status_code == 200
     assert r.json()["amount"] == 2000
     assert r.json()["description"] == "ランチ"   # 送ってないので不変
+
+def test_summary_取引ゼロの期間は全て0(client, auth):
+    r = client.get("/transactions/summary",
+                    params={"type": "monthly", "year": 2099, "month": 1},
+                    headers=auth["headers"])
+    assert r.status_code == 200
+    assert r.json() == {"income": 0, "expense": 0, "balance": 0}
+
