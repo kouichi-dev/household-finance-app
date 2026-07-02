@@ -1,12 +1,11 @@
 
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError
-from datetime import date
+
 
 # user_crud
 
@@ -69,24 +68,17 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     db.refresh(db_transaction)
     return db_transaction
 
-def get_transactions_summary(db: Session, user_id: int, year: int | None, month: int | None, week: int | None):
-    query = db.query(Transaction).filter(
-        Transaction.user_id==user_id,
-        func.extract('year',Transaction.transaction_date) == year
+def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
+    return (
+        db.query(Transaction)
+        .filter(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= start_date,
+            Transaction.transaction_date <= end_date,
+        )
+        .all()
     )
 
-
-    if month is not None:
-        query = query.filter(
-            func.extract('month',Transaction.transaction_date) == month
-        )
-    
-    if week is not None:
-        query = query.filter(
-            func.extract('week',Transaction.transaction_date) == week
-        )
-    
-    return query.all()
 
 def get_transactions(db: Session, user_id: int, page: int, limit: int):
     offset = (page - 1) * limit

@@ -104,3 +104,16 @@ def test_summary_month範囲外は422(client, auth):
 def test_summary_week範囲外は422(client, auth):
     response = client.get("/transactions/summary?type=weekly&year=2026&week=60", headers=auth["headers"])
     assert response.status_code == 422
+
+def test_summary_週次_ISO年境界(client, auth):
+# 2023-01-01 は ISO 2022年 第52週
+    client.post("/transactions", json={"amount": 1000, "type": "income",
+        "transaction_date": "2023-01-01"}, headers=auth["headers"])
+
+    # ISO的に正しい year=2022, week=52 → 拾える
+    r1 = client.get("/transactions/summary?type=weekly&year=2022&week=52", headers=auth["headers"])
+    assert r1.json()["income"] == 1000
+
+    # 暦年に釣られた year=2023, week=52 → 拾わない
+    r2 = client.get("/transactions/summary?type=weekly&year=2023&week=52", headers=auth["headers"])
+    assert r2.json()["income"] == 0

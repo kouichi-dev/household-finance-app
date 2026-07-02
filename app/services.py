@@ -4,6 +4,8 @@ import crud
 import auth
 from fastapi import HTTPException
 from exceptions import EmailAlreadyExistsError
+from datetime import date
+import calendar
 
 _EMAIL_DUP = "このメールアドレスは既に使われています"
 
@@ -42,26 +44,34 @@ def login_user(db, username, password):
     return auth.create_access_token({"sub": db_user.email})
 
 
-def get_transactions_summary(db,user_id,type,year,month,week):
 
+def get_transactions_summary(db, user_id, type, year, month, week):
     if type == 'monthly' and month is None:
         raise HTTPException(status_code=422, detail="月の入力がありません")
     if type == 'weekly' and week is None:
         raise HTTPException(status_code=422, detail="週の入力がありません")
-    
-    transactions = crud.get_transactions_summary(db,user_id,year,month,week)
-    
+
+    if type == 'monthly':
+        start = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]   # その月の日数
+        end = date(year, month, last_day)
+    else:  # weekly
+        try:
+            start = date.fromisocalendar(year, week, 1)  # ISO週の月曜
+            end = date.fromisocalendar(year, week, 7)    # ISO週の日曜
+        except ValueError:
+            raise HTTPException(status_code=422, detail="指定の週は存在しません")
+
+    transactions = crud.get_transactions_summary(db, user_id, start, end)
+
     income_total = 0
     expense_total = 0
-
     for t in transactions:
         if t.type == 'income':
             income_total += t.amount
         elif t.type == 'expense':
             expense_total += t.amount
-    
     balance = income_total - expense_total
-
     return {"income": income_total, "expense": expense_total, "balance": balance}
 
 def get_user(db, user_id):
