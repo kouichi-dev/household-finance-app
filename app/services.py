@@ -44,11 +44,9 @@ def login_user(db, username, password):
 
 def get_transactions_summary(db,user_id,type,year,month,week):
 
-    if year is None:
-        raise HTTPException(status_code=422, detail="年の入力がありません")
-    if type == 'monthly' and not month:
+    if type == 'monthly' and month is None:
         raise HTTPException(status_code=422, detail="月の入力がありません")
-    if type == 'weekly' and not week:
+    if type == 'weekly' and week is None:
         raise HTTPException(status_code=422, detail="週の入力がありません")
     
     transactions = crud.get_transactions_summary(db,user_id,year,month,week)

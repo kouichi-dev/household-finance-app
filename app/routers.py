@@ -87,8 +87,8 @@ async def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Quer
 async def get_transactions_summary_endpoint(
     type: SummaryType,
     year: int,
-    month: int | None = None,
-    week: int | None = None,
+    month: int | None = Query(None, ge=1, le=12),
+    week: int | None = Query(None, ge=1, le=53),
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

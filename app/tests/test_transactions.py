@@ -84,3 +84,23 @@ def test_自分のカテゴリは紐づけできる(client, auth):
     }, headers=auth["headers"])
     assert response.status_code == 200
     assert response.json()["category_id"] == category["id"]
+
+    # monthly なのに month 未指定 → 422（条件付き必須・service側）
+def test_summary_monthlyでmonth無しは422(client, auth):
+    response = client.get("/transactions/summary?type=monthly&year=2026", headers=auth["headers"])
+    assert response.status_code == 422
+
+# weekly なのに week 未指定 → 422（条件付き必須・service側）
+def test_summary_weeklyでweek無しは422(client, auth):
+    response = client.get("/transactions/summary?type=weekly&year=2026", headers=auth["headers"])
+    assert response.status_code == 422
+
+# month 範囲外 → 422（範囲・router側 Query）
+def test_summary_month範囲外は422(client, auth):
+    response = client.get("/transactions/summary?type=monthly&year=2026&month=13", headers=auth["headers"])
+    assert response.status_code == 422
+
+# week 範囲外 → 422（範囲・router側 Query）
+def test_summary_week範囲外は422(client, auth):
+    response = client.get("/transactions/summary?type=weekly&year=2026&week=60", headers=auth["headers"])
+    assert response.status_code == 422
