@@ -120,10 +120,12 @@ def get_categories(db, user_id):
     return crud.get_categories(db, user_id)
 
 def update_category(db, user_id, category_id, category):
-    updated = crud.update_category(db, user_id, category_id, category)
+    data = category.model_dump(exclude_unset=True)
+    updated = crud.update_category(db, user_id, category_id, data)
     if updated is None:
         raise HTTPException(status_code=404, detail="カテゴリが見つかりません")
     return updated
+
 
 def delete_category(db, user_id, category_id):
     if crud.delete_category(db, user_id, category_id) is None:

@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate,CategoryUpdate
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -116,7 +116,7 @@ async def get_category_endpoint(current_user = Depends(get_current_user), db: Se
 
 
 @router.patch("/categories/{category_id}",response_model=CategoryResponse)
-async def update_category_endpoint(category_id: int, category: CategoryCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_category_endpoint(category_id: int, category: CategoryUpdate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     return services.update_category(db,current_user.id,category_id,category)
 
 

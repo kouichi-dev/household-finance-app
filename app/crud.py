@@ -124,14 +124,16 @@ def get_category(db: Session, user_id: int, category_id: int):
 def get_categories(db: Session, user_id: int):
     return db.query(Category).filter(Category.user_id==user_id).all()
 
-def update_category(db: Session, user_id: int, category_id: int, category: CategoryCreate):
-    db_category = db.query(Category).filter(Category.user_id==user_id,Category.id==category_id).first()
+def update_category(db: Session, user_id: int, category_id: int, data: dict):
+    db_category = db.query(Category).filter(Category.user_id==user_id, Category.id==category_id).first()
     if not db_category:
         return None
-    db_category.name=category.name
+    for key, value in data.items():
+        setattr(db_category, key, value)
     db.commit()
     db.refresh(db_category)
     return db_category
+
 
 def delete_category(db: Session, user_id: int, category_id: int):
     db_category = db.query(Category).filter(Category.user_id==user_id,Category.id==category_id).first()
