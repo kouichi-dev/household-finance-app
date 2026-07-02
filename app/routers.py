@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -96,7 +96,7 @@ async def get_transactions_summary_endpoint(
     return services.get_transactions_summary(db,current_user.id,type,year,month,week)
 
 @router.patch("/transactions/{transaction_id}",response_model=TransactionResponse)
-async def update_transaction_endpoint(transaction: TransactionCreate, transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_transaction_endpoint(transaction: TransactionUpdate, transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     return services.update_transaction(db,current_user.id,transaction_id,transaction)
 
 @router.delete("/transactions/{transaction_id}")

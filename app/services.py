@@ -99,11 +99,14 @@ def get_transactions(db, user_id, page, limit):
     return crud.get_transactions(db, user_id, page, limit)
 
 def update_transaction(db, user_id, transaction_id, transaction):
-    _ensure_category_owned(db, user_id, transaction.category_id)
-    updated = crud.update_transaction(db, user_id, transaction_id, transaction)
+    data = transaction.model_dump(exclude_unset=True)
+    if "category_id" in data:                          # category_id を送った時だけ検証
+        _ensure_category_owned(db, user_id, data["category_id"])
+    updated = crud.update_transaction(db, user_id, transaction_id, data)
     if updated is None:
         raise HTTPException(status_code=404, detail="取引が見つかりません")
     return updated
+
 
 def delete_transaction(db, user_id, transaction_id):
     if crud.delete_transaction(db, user_id, transaction_id) is None:

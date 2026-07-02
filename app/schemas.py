@@ -11,7 +11,7 @@ class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
     password: str | None = None
-    
+
 
 class UserResponse(BaseModel):
     id: int
@@ -26,6 +26,13 @@ class TransactionCreate(BaseModel):
     amount: int
     type: TransactionType
     transaction_date: date
+    description: str | None = None
+    category_id: int | None = None
+
+class TransactionUpdate(BaseModel):
+    amount: int | None = None
+    type: TransactionType | None = None
+    transaction_date: date | None = None
     description: str | None = None
     category_id: int | None = None
 

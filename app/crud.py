@@ -90,17 +90,16 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int):
     )
 
 
-def update_transaction(db: Session, user_id: int, transaction_id: int, transaction: TransactionCreate):
-    db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id,Transaction.id==transaction_id).first()
+def update_transaction(db: Session, user_id: int, transaction_id: int, data: dict):
+    db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id, Transaction.id==transaction_id).first()
     if not db_transaction:
         return None
-    db_transaction.amount=transaction.amount
-    db_transaction.type=transaction.type
-    db_transaction.description=transaction.description
-    db_transaction.category_id=transaction.category_id
+    for key, value in data.items():
+        setattr(db_transaction, key, value)  # transaction_date も含め送られた項目を全反映
     db.commit()
     db.refresh(db_transaction)
     return db_transaction
+
 
 def delete_transaction(db: Session, user_id: int, transaction_id: int):
     db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id,Transaction.id==transaction_id).first()

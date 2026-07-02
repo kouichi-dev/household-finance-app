@@ -118,3 +118,20 @@ def test_summary_週次_ISO年境界(client, auth):
     r2 = client.get("/transactions/summary?type=weekly&year=2023&week=52", headers=auth["headers"])
     assert r2.json()["income"] == 0
 
+# サイレントバグの回帰テスト：transaction_date が実際に更新される
+def test_収支更新_日付が反映される(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "type": "expense",
+        "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    r = client.patch(f"/transactions/{created['id']}",
+        json={"transaction_date": "2026-07-20"}, headers=auth["headers"])
+    assert r.status_code == 200
+    assert r.json()["transaction_date"] == "2026-07-20"
+
+# 部分更新：amount だけ送る → description は不変
+def test_収支部分更新_amountだけ(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "type": "expense",
+        "transaction_date": "2026-06-15", "description": "ランチ"}, headers=auth["headers"]).json()
+    r = client.patch(f"/transactions/{created['id']}", json={"amount": 2000}, headers=auth["headers"])
+    assert r.status_code == 200
+    assert r.json()["amount"] == 2000
+    assert r.json()["description"] == "ランチ"   # 送ってないので不変
