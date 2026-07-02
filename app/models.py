@@ -15,8 +15,8 @@ class User(Base):
 class Transaction(Base):
     __tablename__ = 'transactions'
     id = Column('id',Integer,primary_key=True)
-    user_id = Column('user_id',Integer,ForeignKey('users.id'),nullable=False)
-    category_id = Column('category_id',Integer,ForeignKey('categories.id'),nullable=True)
+    user_id = Column('user_id',Integer,ForeignKey('users.id', ondelete='CASCADE'),nullable=False)
+    category_id = Column('category_id',Integer,ForeignKey('categories.id', ondelete='SET NULL'),nullable=True)
     amount = Column('amount',Integer,nullable=False)
     description = Column('description',String(50),nullable=True)
     type = Column('type',String(10),nullable=False)
@@ -30,5 +30,5 @@ class Transaction(Base):
 class Category(Base):
     __tablename__ = 'categories'
     id = Column('id',Integer,primary_key=True)
-    user_id = Column('user_id',Integer,ForeignKey('users.id'),nullable=False)
+    user_id = Column('user_id',Integer,ForeignKey('users.id', ondelete='CASCADE'),nullable=False)
     name = Column('name',String(50),nullable=False)

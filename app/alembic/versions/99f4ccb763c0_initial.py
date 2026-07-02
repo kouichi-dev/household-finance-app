@@ -34,7 +34,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('transactions',
@@ -46,8 +46,8 @@ def upgrade() -> None:
     sa.Column('type', sa.String(length=10), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("type IN ('income','expense')", name='ck_transactions_type'),
-    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
