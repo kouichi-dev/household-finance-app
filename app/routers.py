@@ -34,6 +34,12 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
         raise HTTPException(status_code=401, detail="ユーザーが存在しません")
     return user
 
+def verify_self(user_id: int, current_user = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="権限がありません")
+    return current_user
+
+
 
 @router.post("/users", response_model=UserResponse)
 async def create_user_endpoint(user:UserCreate, db: Session = Depends(get_db)):
@@ -44,26 +50,17 @@ async def get_current_user_endpoint(current_user = Depends(get_current_user)):
     return current_user
 
 @router.get("/users/{user_id}", response_model=UserResponse)
-async def get_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="権限がありません")
+async def get_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(verify_self)):
     return services.get_user(db,user_id)
 
-
 @router.patch("/users/{user_id}", response_model=UserResponse)
-async def update_user_endpoint(user_id: int, user: UserUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="権限がありません")
+async def update_user_endpoint(user_id: int, user: UserUpdate, db: Session = Depends(get_db), current_user = Depends(verify_self)):
     return services.update_user(db,user,user_id)
 
 @router.delete("/users/{user_id}")
-async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db),  current_user = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="権限がありません")
+async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(verify_self)):
     services.delete_user(db,user_id)
     return {"message":"deleted"}
-
-
 
 @router.post("/auth/login")
 async def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
