@@ -1,6 +1,6 @@
 
 
-from fastapi import APIRouter,Depends,HTTPException
+from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
@@ -78,7 +78,7 @@ async def create_transaction_endpoint(transaction: TransactionCreate, current_us
 
 
 @router.get("/transactions",response_model=list[TransactionResponse])
-async def get_transaction_endpoint(page: int = 1, limit: int = 20, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     db_transaction = services.get_transactions(db,current_user.id,page,limit)
 
     return db_transaction

@@ -40,3 +40,15 @@ def test_週次集計(client, auth):
     client.post("/transactions", json={"amount": 1000, "type": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
     response = client.get("/transactions/summary?type=weekly&year=2026&week=1", headers=auth["headers"])
     assert response.status_code == 200
+
+def test_不正なpageは422になる(client, auth):
+    response = client.get("/transactions?page=0", headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_limit上限超過は422になる(client, auth):
+    response = client.get("/transactions?limit=101", headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_limit下限未満は422になる(client, auth):
+    response = client.get("/transactions?limit=0", headers=auth["headers"])
+    assert response.status_code == 422    
