@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError, CategoryAlreadyExistsError
-from sqlalchemy import func, case
+from sqlalchemy import func, case, select
 
 
 # user_crud
@@ -22,10 +22,10 @@ def create_user(db: Session, user: UserCreate):
     return db_user
 
 def get_users(db: Session, user_id: int):
-    return db.query(User).filter(User.id==user_id).first()
+    return db.get(User, user_id)
 
 def update_user(db: Session, data: dict, user_id: int):
-    db_user = db.query(User).filter(User.id==user_id).first()
+    db_user = db.get(User, user_id)
     if not db_user:
         return None
     for key, value in data.items():
@@ -40,7 +40,7 @@ def update_user(db: Session, data: dict, user_id: int):
 
 
 def delete_user(db: Session, user_id: int):
-    db_user = db.query(User).filter(User.id==user_id).first()
+    db_user = db.get(User, user_id)
     if not db_user:
         return None
     db.delete(db_user)
@@ -51,7 +51,8 @@ def delete_user(db: Session, user_id: int):
 
 
 def get_user_by_email(db: Session,email: str):
-    return db.query(User).filter(User.email==email).first()
+    stmt = select(User).where(User.email == email)
+    return db.execute(stmt).scalar_one_or_none()
 
 # transaction_crud
 
@@ -70,33 +71,35 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     return db_transaction
 
 def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
-    return (
-        db.query(
+    stmt = (
+        select(
             func.coalesce(func.sum(case((Transaction.type == 'income', Transaction.amount), else_=0)), 0).label("income"),
             func.coalesce(func.sum(case((Transaction.type == 'expense', Transaction.amount), else_=0)), 0).label("expense"),
         )
-        .filter(
+        .where(
             Transaction.user_id == user_id,
             Transaction.transaction_date >= start_date,
             Transaction.transaction_date <= end_date,
         )
-        .first()
     )
-
+    return db.execute(stmt).first()
 
 
 def get_transactions(db: Session, user_id: int, page: int, limit: int):
     offset = (page - 1) * limit
-    return (
-        db.query(Transaction)
-        .filter(Transaction.user_id == user_id)
+    stmt = (
+        select(Transaction)
+        .where(Transaction.user_id == user_id)
         .order_by(Transaction.id)
-        .offset(offset).limit(limit).all()
+        .offset(offset)
+        .limit(limit)
     )
+    return db.execute(stmt).scalars().all()
 
 
 def update_transaction(db: Session, user_id: int, transaction_id: int, data: dict):
-    db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id, Transaction.id==transaction_id).first()
+    stmt = select(Transaction).where(Transaction.user_id == user_id, Transaction.id == transaction_id)
+    db_transaction = db.execute(stmt).scalar_one_or_none()
     if not db_transaction:
         return None
     for key, value in data.items():
@@ -107,7 +110,8 @@ def update_transaction(db: Session, user_id: int, transaction_id: int, data: dic
 
 
 def delete_transaction(db: Session, user_id: int, transaction_id: int):
-    db_transaction = db.query(Transaction).filter(Transaction.user_id==user_id,Transaction.id==transaction_id).first()
+    stmt = select(Transaction).where(Transaction.user_id == user_id, Transaction.id == transaction_id)
+    db_transaction = db.execute(stmt).scalar_one_or_none()
     if not db_transaction:
         return None
     db.delete(db_transaction)
@@ -128,13 +132,16 @@ def create_category(db: Session, user_id: int, category: CategoryCreate):
     return db_category
 
 def get_category(db: Session, user_id: int, category_id: int):
-    return db.query(Category).filter(Category.user_id==user_id, Category.id==category_id).first()
+    stmt = select(Category).where(Category.user_id==user_id, Category.id==category_id)
+    return db.execute(stmt).scalar_one_or_none()
 
 def get_categories(db: Session, user_id: int):
-    return db.query(Category).filter(Category.user_id==user_id).all()
+    stmt = select(Category).where(Category.user_id==user_id)
+    return db.execute(stmt).scalars().all()
 
 def update_category(db: Session, user_id: int, category_id: int, data: dict):
-    db_category = db.query(Category).filter(Category.user_id==user_id, Category.id==category_id).first()
+    stmt = select(Category).where(Category.user_id==user_id, Category.id==category_id)
+    db_category = db.execute(stmt).scalar_one_or_none()
     if not db_category:
         return None
     for key, value in data.items():
@@ -145,7 +152,8 @@ def update_category(db: Session, user_id: int, category_id: int, data: dict):
 
 
 def delete_category(db: Session, user_id: int, category_id: int):
-    db_category = db.query(Category).filter(Category.user_id==user_id,Category.id==category_id).first()
+    stmt = select(Category).where(Category.user_id==user_id,Category.id==category_id)
+    db_category = db.execute(stmt).scalar_one_or_none()
     if not db_category:
         return None
     db.delete(db_category)
