@@ -223,4 +223,3 @@ CLAUDE.md
 app/test.db
 test.db
 .claude/
-pytest
