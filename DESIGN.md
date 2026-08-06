@@ -7,6 +7,9 @@
 - ユーザー登録・ログインができる
 - JWTトークンで認証する
 - 自分のデータのみ操作できる
+- アクセストークン（短命）とリフレッシュトークン（長命）の2種類を発行する
+- アクセストークンが失効したら、リフレッシュトークンで再発行できる
+- ログアウト時にリフレッシュトークンを失効できる（無効化する）
 
 ### 収支管理
 - 収支を登録・取得・更新・削除できる
@@ -21,7 +24,9 @@
 
 ## 非機能要件
 - パスワードはハッシュ化して保存する
-- 認証にJWTを使用しステートレスな設計にする
+- 認証にJWTを使用し、通常のAPIリクエストはステートレスに検証する
+  - アクセストークン: JWTのみで検証（DB参照なし・ステートレス）
+  - リフレッシュトークン: DBに保存し、失効可能にする（再発行・ログアウト時のみDB参照）
 - Dockerで環境を再現できる
 - Alembicでスキーマ変更を管理する
 - pytestでテストを書く
@@ -32,8 +37,10 @@
 - GET     /users/{id}　ユーザー取得
 - PATCH   /users/{id}　ユーザー更新
 - DELETE  /users/{id}  ユーザー削除
-- POST    /auth/login  ログイン
-- GET     /users/me    ログイン中のユーザー取得
+- POST    /auth/login    ログイン（アクセストークン + リフレッシュトークンを発行）
+- POST    /auth/refresh  リフレッシュトークンでアクセストークンを再発行
+- POST    /auth/logout   リフレッシュトークンを失効（ログアウト）
+- GET     /users/me      ログイン中のユーザー取得
 
 - POST    /transactions          収支登録
 - GET /transactions/summary  収支集計取得
@@ -83,6 +90,14 @@
 - id INTEGER PRIMARY KEY
 - user_id INTEGER FOREIGN KEY('users.id') NOT NULL
 - name VARCHAR(50) NOT NULL
+
+### refresh_tokensテーブル
+- id INTEGER PRIMARY KEY
+- user_id INTEGER FOREIGN KEY('users.id') NOT NULL
+- token VARCHAR(255) NOT NULL UNIQUE
+- expires_at TIMESTAMP NOT NULL
+- revoked BOOLEAN NOT NULL DEFAULT false
+- created_at TIMESTAMP NOT NULL
 
 
 ## アーキテクチャ

@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate,CategoryUpdate
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenRequest,AccessTokenResponse
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -25,8 +25,6 @@ def get_db():
     finally:
         db.close()
 
-
-
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     user_id = auth.verify_token(token)
     user = crud.get_users(db, int(user_id))
@@ -38,8 +36,6 @@ def verify_self(user_id: int, current_user = Depends(get_current_user)):
     if current_user.id != user_id:
         raise HTTPException(status_code=403, detail="権限がありません")
     return current_user
-
-
 
 @router.post("/users", response_model=UserResponse)
 def create_user_endpoint(user:UserCreate, db: Session = Depends(get_db)):
@@ -64,16 +60,16 @@ def delete_user_endpoint(user_id: int, db: Session = Depends(get_db), current_us
 
 @router.post("/auth/login")
 def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    access_token,refresh_token = services.login_user(db, form_data.username, form_data.password)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
-    token = services.login_user(db, form_data.username, form_data.password)
-    return {"access_token": token, "token_type": "bearer"}
-
-
+@router.post("/auth/refresh",response_model=AccessTokenResponse)
+def refresh_token_endpoint(token: RefreshTokenRequest, db: Session = Depends(get_db)):
+    return services.refresh_access_token(db,token.refresh_token)
 
 @router.post("/transactions",response_model=TransactionResponse)
 def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     return services.create_transaction(db, current_user.id, transaction)
-
 
 @router.get("/transactions",response_model=list[TransactionResponse])
 def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), current_user = Depends(get_current_user), db: Session = Depends(get_db)):

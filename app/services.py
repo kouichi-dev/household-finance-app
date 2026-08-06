@@ -10,7 +10,11 @@ import calendar
 
 _EMAIL_DUP = "このメールアドレスは既に使われています"
 
-
+def refresh_access_token(db,refresh_token):
+    refresh_token = auth.verify_refresh_token(db,refresh_token)
+    access_token = auth.create_access_token({"sub": str(refresh_token.user_id)})
+    return {"access_token": access_token}
+    
 # ---- users ----
 def create_user(db,user):
     if crud.get_user_by_email(db, user.email):
@@ -19,7 +23,7 @@ def create_user(db,user):
     try:
         return crud.create_user(db, user)
     except EmailAlreadyExistsError:
-        raise HTTPException(status_code=409, detail= _EMAIL_DUP)    
+        raise HTTPException(status_code=409, detail= _EMAIL_DUP)
 
 def update_user(db, user, user_id):
     data = user.model_dump(exclude_unset=True)          # 送られたキーだけ
@@ -40,11 +44,9 @@ def login_user(db, username, password):
     db_user = crud.get_user_by_email(db, username)
     if not db_user or not auth.verify_password(password, db_user.password):
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
-    return auth.create_access_token({"sub": str(db_user.id)})
-
-
-
-
+    access_token = auth.create_access_token({"sub": str(db_user.id)})
+    refresh_token = auth.create_refresh_token(db,db_user.id)
+    return access_token,refresh_token
 
 def get_transactions_summary(db, user_id, type, year, month, week):
     if type == 'monthly' and month is None:

@@ -2,11 +2,32 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from models import User,Transaction,Category
+from models import User,Transaction,Category,RefreshTokens
 from schemas import UserCreate,TransactionCreate,CategoryCreate
-from exceptions import EmailAlreadyExistsError, CategoryAlreadyExistsError
-from sqlalchemy import func, case, select
+from exceptions import EmailAlreadyExistsError,CategoryAlreadyExistsError,TokenAlreadyExistsError
+from sqlalchemy import func,case,select
+from datetime import datetime
 
+# refresh_token
+
+def data_save_refresh_token(db: Session, user_id: int, token: str, expires_at: datetime):
+    db_refresh_tokens = RefreshTokens(
+        user_id=user_id,
+        token=token,
+        expires_at=expires_at
+    )
+    db.add(db_refresh_tokens)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise TokenAlreadyExistsError()
+    db.refresh(db_refresh_tokens)
+    return db_refresh_tokens
+
+def get_refresh_token(db: Session, token):
+    refresh_token = select(RefreshTokens).where(RefreshTokens.token==token)
+    return db.execute(refresh_token).scalar_one_or_none()
 
 # user_crud
 

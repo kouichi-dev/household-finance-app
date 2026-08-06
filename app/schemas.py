@@ -2,6 +2,12 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from datetime import datetime,date
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+class AccessTokenResponse(BaseModel):
+    access_token: str
+
 class UserCreate(BaseModel):
     name: str
     email: str
@@ -11,7 +17,6 @@ class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
     password: str | None = None
-
 
 class UserResponse(BaseModel):
     id: int
