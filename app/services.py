@@ -14,6 +14,13 @@ def refresh_access_token(db,refresh_token):
     refresh_token = auth.verify_refresh_token(db,refresh_token)
     access_token = auth.create_access_token({"sub": str(refresh_token.user_id)})
     return {"access_token": access_token}
+
+def revoke_refresh_token(db,refresh_token):
+    db_refresh_token = crud.revoke_refresh_token(db,refresh_token)
+    if db_refresh_token is None:
+        raise HTTPException(status_code=404, detail="リフレッシュトークンが存在しません")
+    return db_refresh_token
+
     
 # ---- users ----
 def create_user(db,user):

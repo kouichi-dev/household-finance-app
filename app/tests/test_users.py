@@ -43,7 +43,7 @@ def test_存在しないユーザー更新(client, auth):
 
 def test_ユーザー削除(client, auth):
     response = client.delete(f"/users/{auth['user_id']}", headers=auth["headers"])
-    assert response.status_code == 200
+    assert response.status_code == 204
 
 def test_重複メールは登録できない(client):
     client.post("/users", json={

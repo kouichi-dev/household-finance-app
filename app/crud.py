@@ -29,6 +29,16 @@ def get_refresh_token(db: Session, token):
     refresh_token = select(RefreshTokens).where(RefreshTokens.token==token)
     return db.execute(refresh_token).scalar_one_or_none()
 
+def revoke_refresh_token(db: Session, token):
+    stmt = select(RefreshTokens).where(RefreshTokens.token==token)
+    db_refresh_token = db.execute(stmt).scalar_one_or_none()
+    if not db_refresh_token:
+        return None
+    db_refresh_token.revoked=True
+    db.commit()
+    db.refresh(db_refresh_token)
+    return db_refresh_token
+
 # user_crud
 
 def create_user(db: Session, user: UserCreate):

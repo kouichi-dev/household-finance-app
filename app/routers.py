@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenRequest,AccessTokenResponse
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -53,10 +53,10 @@ def get_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user 
 def update_user_endpoint(user_id: int, user: UserUpdate, db: Session = Depends(get_db), current_user = Depends(verify_self)):
     return services.update_user(db,user,user_id)
 
-@router.delete("/users/{user_id}")
+@router.delete("/users/{user_id}", status_code=204)
 def delete_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(verify_self)):
     services.delete_user(db,user_id)
-    return {"message":"deleted"}
+
 
 @router.post("/auth/login")
 def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -64,8 +64,12 @@ def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Se
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/auth/refresh",response_model=AccessTokenResponse)
-def refresh_token_endpoint(token: RefreshTokenRequest, db: Session = Depends(get_db)):
+def refresh_token_endpoint(token: RefreshTokenBody, db: Session = Depends(get_db)):
     return services.refresh_access_token(db,token.refresh_token)
+
+@router.post("/auth/logout", status_code=204)
+def logout_endpoint(token: RefreshTokenBody, db: Session = Depends(get_db)):
+    services.revoke_refresh_token(db,token.refresh_token)
 
 @router.post("/transactions",response_model=TransactionResponse)
 def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -74,7 +78,6 @@ def create_transaction_endpoint(transaction: TransactionCreate, current_user = D
 @router.get("/transactions",response_model=list[TransactionResponse])
 def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     db_transaction = services.get_transactions(db,current_user.id,page,limit)
-
     return db_transaction
 
 @router.get("/transactions/summary")
@@ -92,10 +95,10 @@ def get_transactions_summary_endpoint(
 def update_transaction_endpoint(transaction: TransactionUpdate, transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     return services.update_transaction(db,current_user.id,transaction_id,transaction)
 
-@router.delete("/transactions/{transaction_id}")
+@router.delete("/transactions/{transaction_id}", status_code=204)
 def delete_transaction_endpoint(transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     services.delete_transaction(db, current_user.id, transaction_id)
-    return {"message":"deleted"}
+
 
 #categories_endpoint
 
@@ -113,9 +116,9 @@ def update_category_endpoint(category_id: int, category: CategoryUpdate, current
     return services.update_category(db,current_user.id,category_id,category)
 
 
-@router.delete("/categories/{category_id}")
+@router.delete("/categories/{category_id}", status_code=204)
 def delete_category_endpoint(category_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     services.delete_category(db,current_user.id,category_id)
-    return {"message":"deleted"}
+
 
 

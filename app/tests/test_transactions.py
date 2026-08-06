@@ -28,7 +28,7 @@ def test_収支更新(client, auth):
 def test_収支削除(client, auth):
     created = client.post("/transactions", json={"amount": 1000, "type": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
     response = client.delete(f"/transactions/{created['id']}", headers=auth["headers"])
-    assert response.status_code == 200
+    assert response.status_code == 204
 
 def test_収支集計(client, auth):
     client.post("/transactions", json={"amount": 1000, "type": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])

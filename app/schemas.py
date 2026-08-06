@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from datetime import datetime,date
 
-class RefreshTokenRequest(BaseModel):
+class RefreshTokenBody(BaseModel):
     refresh_token: str
 
 class AccessTokenResponse(BaseModel):
