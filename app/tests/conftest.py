@@ -5,10 +5,11 @@ from sqlalchemy.orm import sessionmaker
 from database import Base
 from main import app
 from routers import get_db
+import os
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def override_get_db():
@@ -42,5 +43,6 @@ def auth(client):
     }).json()
     return {
         "user_id": user["id"],
-        "headers": {"Authorization": f"Bearer {login['access_token']}"}
+        "headers": {"Authorization": f"Bearer {login['access_token']}"},
+        "refresh_token": login["refresh_token"]
     }
