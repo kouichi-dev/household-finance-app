@@ -25,7 +25,17 @@
 ```bash
 git clone https://github.com/kouitchi-dev/household-finance-app.git
 cd household-finance-app
-docker-compose up --build
+cp .env.example .env
+# .env を開き、CHANGE_ME の3箇所を実際の値に置き換える
+docker compose up --build
+```
+`db/init.sql` はテスト用DB（`household_test`）を作成しますが、
+これはDBのデータボリュームが空のときにのみ実行されます。
+一度でも起動したことがある場合は、ボリューム（＝DBのデータ）ごと削除してから起動してください。
+
+```bash
+docker compose down -v
+docker compose up --build
 ```
 
 ## エンドポイント一覧
@@ -61,6 +71,6 @@ docker-compose up --build
 ## テスト
 
 ```bash
-docker-compose exec app pytest tests/
+docker compose run --rm app pytest tests/
 ```
 
