@@ -55,12 +55,11 @@ def login_user(db, username, password):
     refresh_token = auth.create_refresh_token(db,db_user.id)
     return access_token,refresh_token
 
-def get_transactions_summary(db, user_id, type, year, month, week):
+def resolve_period(type, year, month, week):
     if type == 'monthly' and month is None:
         raise HTTPException(status_code=422, detail="月の入力がありません")
     if type == 'weekly' and week is None:
         raise HTTPException(status_code=422, detail="週の入力がありません")
-
     if type == 'monthly':
         start = date(year, month, 1)
         last_day = calendar.monthrange(year, month)[1]   # その月の日数
@@ -71,7 +70,10 @@ def get_transactions_summary(db, user_id, type, year, month, week):
             end = date.fromisocalendar(year, week, 7)    # ISO週の日曜
         except ValueError:
             raise HTTPException(status_code=422, detail="指定の週は存在しません")
-        
+    return start,end
+
+def get_transactions_summary(db, user_id, type, year, month, week):
+    start, end = resolve_period(type, year, month, week)
     row = crud.get_transactions_summary(db, user_id, start, end)
     balance = row.income - row.expense
     return {"income": row.income, "expense": row.expense, "balance": balance}
