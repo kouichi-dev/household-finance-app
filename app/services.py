@@ -72,13 +72,6 @@ def resolve_period(type, year, month, week):
             raise HTTPException(status_code=422, detail="指定の週は存在しません")
     return start,end
 
-def get_transactions_summary(db, user_id, type, year, month, week):
-    start, end = resolve_period(type, year, month, week)
-    row = crud.get_transactions_summary(db, user_id, start, end)
-    balance = row.income - row.expense
-    return {"income": row.income, "expense": row.expense, "balance": balance}
-
-
 def get_user(db, user_id):
     db_user = crud.get_users(db, user_id)
     if db_user is None:
@@ -101,8 +94,18 @@ def create_transaction(db, user_id, transaction):
     _ensure_category_owned(db, user_id, transaction.category_id)
     return crud.create_transaction(db, user_id, transaction)
 
-def get_transactions(db, user_id, page, limit):
-    return crud.get_transactions(db, user_id, page, limit)
+def get_transactions(db, user_id, page, limit, type, year, month, week):
+    if year is None:
+        start, end = None, None
+    else:
+        start, end = resolve_period(type, year, month, week)
+    return crud.get_transactions(db, user_id, page, limit, start, end)
+
+def get_transactions_summary(db, user_id, type, year, month, week):
+    start, end = resolve_period(type, year, month, week)
+    row = crud.get_transactions_summary(db, user_id, start, end)
+    balance = row.income - row.expense
+    return {"income": row.income, "expense": row.expense, "balance": balance}
 
 def update_transaction(db, user_id, transaction_id, transaction):
     data = transaction.model_dump(exclude_unset=True)
@@ -112,7 +115,6 @@ def update_transaction(db, user_id, transaction_id, transaction):
     if updated is None:
         raise HTTPException(status_code=404, detail="取引が見つかりません")
     return updated
-
 
 def delete_transaction(db, user_id, transaction_id):
     if crud.delete_transaction(db, user_id, transaction_id) is None:

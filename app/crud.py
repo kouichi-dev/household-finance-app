@@ -6,7 +6,7 @@ from models import User,Transaction,Category,RefreshTokens
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError,CategoryAlreadyExistsError,TokenAlreadyExistsError
 from sqlalchemy import func,case,select
-from datetime import datetime
+from datetime import datetime,date
 
 # refresh_token
 
@@ -101,6 +101,30 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     db.refresh(db_transaction)
     return db_transaction
 
+def get_transactions(db: Session, user_id: int, page: int, limit: int, start: date, end: date):
+    if start is None and end is None:
+        offset = (page - 1) * limit
+        stmt = (
+            select(Transaction)
+            .where(Transaction.user_id == user_id)
+            .order_by(Transaction.id)
+            .offset(offset)
+            .limit(limit)
+        )
+    else:
+        offset = (page - 1) * limit
+        stmt = (
+            select(Transaction)
+            .where(
+                Transaction.user_id == user_id,
+                Transaction.transaction_date >= start,
+                Transaction.transaction_date <= end)
+            .order_by(Transaction.id)
+            .offset(offset)
+            .limit(limit)
+        )
+    return db.execute(stmt).scalars().all()
+
 def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
     stmt = (
         select(
@@ -114,19 +138,6 @@ def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
         )
     )
     return db.execute(stmt).first()
-
-
-def get_transactions(db: Session, user_id: int, page: int, limit: int):
-    offset = (page - 1) * limit
-    stmt = (
-        select(Transaction)
-        .where(Transaction.user_id == user_id)
-        .order_by(Transaction.id)
-        .offset(offset)
-        .limit(limit)
-    )
-    return db.execute(stmt).scalars().all()
-
 
 def update_transaction(db: Session, user_id: int, transaction_id: int, data: dict):
     stmt = select(Transaction).where(Transaction.user_id == user_id, Transaction.id == transaction_id)

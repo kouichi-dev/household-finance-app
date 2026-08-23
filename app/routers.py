@@ -76,8 +76,8 @@ def create_transaction_endpoint(transaction: TransactionCreate, current_user = D
     return services.create_transaction(db, current_user.id, transaction)
 
 @router.get("/transactions",response_model=list[TransactionResponse])
-def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), current_user = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_transaction = services.get_transactions(db,current_user.id,page,limit)
+def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), type: SummaryType | None = Query(None), year: int | None = Query(None), month: int | None = Query(None), week: int | None = Query(None), current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_transaction = services.get_transactions(db,current_user.id,page,limit,type,year,month,week)
     return db_transaction
 
 @router.get("/transactions/summary")
