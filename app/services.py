@@ -4,7 +4,8 @@ import crud
 import auth
 from fastapi import HTTPException
 from exceptions import EmailAlreadyExistsError, CategoryAlreadyExistsError
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 import calendar
 
 
@@ -91,6 +92,8 @@ def _ensure_category_owned(db, user_id, category_id):
         raise HTTPException(status_code=404, detail="カテゴリが見つかりません")
 
 def create_transaction(db, user_id, transaction):
+    if transaction.transaction_date is None:
+        transaction.transaction_date = datetime.now(ZoneInfo("Asia/Tokyo")).date()
     _ensure_category_owned(db, user_id, transaction.category_id)
     return crud.create_transaction(db, user_id, transaction)
 

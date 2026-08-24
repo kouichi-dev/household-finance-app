@@ -30,7 +30,7 @@ class TransactionType(str, Enum):
 class TransactionCreate(BaseModel):
     amount: int = Field(ge=0)
     type: TransactionType
-    transaction_date: date
+    transaction_date: date | None = None
     description: str | None = None
     category_id: int | None = None
 

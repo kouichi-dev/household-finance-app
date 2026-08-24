@@ -1,3 +1,7 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+
 def test_収支登録(client, auth):
     response = client.post("/transactions", json={
         "amount": 1000,
@@ -158,3 +162,8 @@ def test_収支一覧_指定した月以外は返らない(client, auth):
     assert len(response.json()) == 1
     assert response.json()[0]["transaction_date"] == "2026-08-10"
 
+def test_収支登録_日付省略時に今日の日付が入る(client, auth):
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date().isoformat()
+    response = client.post("/transactions", json={"amount": 1000, "type": "expense"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["transaction_date"] == today
