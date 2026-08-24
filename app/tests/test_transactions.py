@@ -149,3 +149,12 @@ def test_負のamountは422(client, auth):
                     json={"amount": -500, "type": "expense", "transaction_date": "2026-07-01"},
                     headers=auth["headers"])
     assert r.status_code == 422
+
+def test_収支一覧_指定した月以外は返らない(client, auth):
+    client.post("/transactions", json={"amount": 1000, "type": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1000, "type": "expense", "transaction_date": "2026-07-01"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"type": "monthly", "year": 2026, "month": 8}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["transaction_date"] == "2026-08-10"
+
