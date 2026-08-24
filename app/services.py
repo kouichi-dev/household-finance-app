@@ -56,21 +56,12 @@ def login_user(db, username, password):
     refresh_token = auth.create_refresh_token(db,db_user.id)
     return access_token,refresh_token
 
-def resolve_period(type, year, month, week):
-    if type == 'monthly' and month is None:
+def resolve_period(type, year, month):
+    if month is None:
         raise HTTPException(status_code=422, detail="月の入力がありません")
-    if type == 'weekly' and week is None:
-        raise HTTPException(status_code=422, detail="週の入力がありません")
-    if type == 'monthly':
-        start = date(year, month, 1)
-        last_day = calendar.monthrange(year, month)[1]   # その月の日数
-        end = date(year, month, last_day)
-    else:  # weekly
-        try:
-            start = date.fromisocalendar(year, week, 1)  # ISO週の月曜
-            end = date.fromisocalendar(year, week, 7)    # ISO週の日曜
-        except ValueError:
-            raise HTTPException(status_code=422, detail="指定の週は存在しません")
+    start = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]   # その月の日数
+    end = date(year, month, last_day)
     return start,end
 
 def get_user(db, user_id):
@@ -97,15 +88,15 @@ def create_transaction(db, user_id, transaction):
     _ensure_category_owned(db, user_id, transaction.category_id)
     return crud.create_transaction(db, user_id, transaction)
 
-def get_transactions(db, user_id, page, limit, type, year, month, week):
+def get_transactions(db, user_id, page, limit, type, year, month):
     if year is None:
         start, end = None, None
     else:
-        start, end = resolve_period(type, year, month, week)
+        start, end = resolve_period(type, year, month)
     return crud.get_transactions(db, user_id, page, limit, start, end)
 
-def get_transactions_summary(db, user_id, type, year, month, week):
-    start, end = resolve_period(type, year, month, week)
+def get_transactions_summary(db, user_id, type, year, month):
+    start, end = resolve_period(type, year, month)
     row = crud.get_transactions_summary(db, user_id, start, end)
     balance = row.income - row.expense
     return {"income": row.income, "expense": row.expense, "balance": balance}

@@ -52,7 +52,6 @@ class TransactionResponse(BaseModel):
 
 class SummaryType(str, Enum):
     monthly = 'monthly'
-    weekly = 'weekly'
 
 class CategoryCreate(BaseModel):
     name: str
