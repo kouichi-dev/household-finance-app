@@ -30,7 +30,8 @@
 - Dockerで環境を再現できる
 - Alembicでスキーマ変更を管理する
 - pytestでテストを書く
-
+- 日本国内のユーザーを想定する。日付は JST（Asia/Tokyo）基準で判定する
+    - サーバー/コンテナのタイムゾーンは UTC のため、「今日」を求めるときは明示的に JST に変換する
 
 ## エンドポイント一覧
 - POST    /users　　   ユーザー登録
@@ -43,6 +44,7 @@
 - GET     /users/me      ログイン中のユーザー取得
 
 - POST    /transactions          収支登録
+    - transaction_date は省略可能。省略時は JST の今日を入れる
 - GET /transactions/summary  収支集計取得
     - クエリパラメータ:
       - type: monthly | weekly
@@ -54,12 +56,14 @@
       - { "income": 収入合計, "expense": 支出合計, "balance": 収支差額(income - expense) }
 
 - GET     /transactions?page=1&limit=20   収支一覧取得
+    - 並び順: transaction_date 降順、同日は id 降順（新しい順）
 - PATCH　 /transactions/{id}     収支更新
 - DELETE  /transactions/{id}     収支削除
 
 
 - POST    /categories       カテゴリ登録
 - GET     /categories       カテゴリ一覧取得
+    - 並び順: name 昇順
 - PATCH   /categories/{id}  カテゴリ更新
 - DELETE  /categories/{id}   カテゴリ削除
 
@@ -113,6 +117,6 @@
 ### 技術選定理由
 - **FastAPI** : 型安全・自動ドキュメント生成・高速。FastAPIは学習済みであること、軽量で速く、このアプリの規模だと適していることから。
 - PostgreSQL : リレーション管理に適したRDB。PostgreSQLを使うのは実務で最も使われているRDBのため。
-- JWT : ステートレス認証。JWTを採用するのはステートレスでサーバーがセッションを持たず拡張しやすい(サーバーがログイン情報を持たないためサーバーを増やしやすい)。  　      また、実務で広く使われているため。　　　　　　
+- JWT : ステートレス認証。JWTを採用するのはステートレスでサーバーがセッションを持たず拡張しやすい(サーバーがログイン情報を持たないためサーバーを増やしやすい)。また、実務で広く使われているため。　　　　　　
 - Docker : 環境の再現性を担保できるため
 
