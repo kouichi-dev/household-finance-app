@@ -107,7 +107,7 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int, start: da
         stmt = (
             select(Transaction)
             .where(Transaction.user_id == user_id)
-            .order_by(Transaction.id)
+            .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
             .offset(offset)
             .limit(limit)
         )
@@ -119,7 +119,7 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int, start: da
                 Transaction.user_id == user_id,
                 Transaction.transaction_date >= start,
                 Transaction.transaction_date <= end)
-            .order_by(Transaction.id)
+            .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
             .offset(offset)
             .limit(limit)
         )
@@ -178,7 +178,7 @@ def get_category(db: Session, user_id: int, category_id: int):
     return db.execute(stmt).scalar_one_or_none()
 
 def get_categories(db: Session, user_id: int):
-    stmt = select(Category).where(Category.user_id==user_id)
+    stmt = select(Category).where(Category.user_id==user_id).order_by(Category.name)
     return db.execute(stmt).scalars().all()
 
 def update_category(db: Session, user_id: int, category_id: int, data: dict):

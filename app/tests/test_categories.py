@@ -26,3 +26,10 @@ def test_同名カテゴリは409(client, auth):
     r = client.post("/categories", json={"name": "食費"}, headers=auth["headers"])
     assert r.status_code == 409
 
+def test_カテゴリ一覧_name順で返る(client, auth):
+    client.post("/categories", json={"name": "わ"}, headers=auth["headers"])
+    client.post("/categories", json={"name": "あ"}, headers=auth["headers"])
+    response = client.get("/categories", headers=auth["headers"])
+    assert response.status_code == 200
+    assert [category["name"] for category in response.json()] == ["あ","わ"]
+
