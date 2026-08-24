@@ -4,11 +4,12 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,SummaryType,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
 from fastapi import Depends
+from datetime import date
 
 
 
@@ -76,19 +77,18 @@ def create_transaction_endpoint(transaction: TransactionCreate, current_user = D
     return services.create_transaction(db, current_user.id, transaction)
 
 @router.get("/transactions",response_model=list[TransactionResponse])
-def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), type: SummaryType | None = Query(None), year: int | None = Query(None), month: int | None = Query(None), current_user = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_transaction = services.get_transactions(db,current_user.id,page,limit,type,year,month)
+def get_transaction_endpoint(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), unit: PeriodUnit = Query(PeriodUnit.monthly), on: date | None = Query(None), current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_transaction = services.get_transactions(db,current_user.id,page,limit,unit,on)
     return db_transaction
 
 @router.get("/transactions/summary")
 def get_transactions_summary_endpoint(
-    type: SummaryType,
-    year: int,
-    month: int | None = Query(None, ge=1, le=12),
+    on: date,
+    unit: PeriodUnit = Query(PeriodUnit.monthly),
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return services.get_transactions_summary(db,current_user.id,type,year,month)
+    return services.get_transactions_summary(db,current_user.id,unit,on)
 
 @router.patch("/transactions/{transaction_id}",response_model=TransactionResponse)
 def update_transaction_endpoint(transaction: TransactionUpdate, transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):

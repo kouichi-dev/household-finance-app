@@ -36,7 +36,9 @@ def test_収支削除(client, auth):
 
 def test_収支集計(client, auth):
     client.post("/transactions", json={"amount": 1000, "type": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
-    response = client.get("/transactions/summary?type=monthly&year=2026&month=6", headers=auth["headers"])
+    response = client.get("/transactions/summary", 
+                        params={"unit": "monthly", "on": "2026-06-15"}, 
+                        headers=auth["headers"])
     assert response.status_code == 200
 
 def test_不正なpageは422になる(client, auth):
@@ -83,16 +85,6 @@ def test_自分のカテゴリは紐づけできる(client, auth):
     assert response.status_code == 200
     assert response.json()["category_id"] == category["id"]
 
-    # monthly なのに month 未指定 → 422（条件付き必須・service側）
-def test_summary_monthlyでmonth無しは422(client, auth):
-    response = client.get("/transactions/summary?type=monthly&year=2026", headers=auth["headers"])
-    assert response.status_code == 422
-
-# month 範囲外 → 422（範囲・router側 Query）
-def test_summary_month範囲外は422(client, auth):
-    response = client.get("/transactions/summary?type=monthly&year=2026&month=13", headers=auth["headers"])
-    assert response.status_code == 422
-
 # サイレントバグの回帰テスト：transaction_date が実際に更新される
 def test_収支更新_日付が反映される(client, auth):
     created = client.post("/transactions", json={"amount": 1000, "type": "expense",
@@ -113,8 +105,7 @@ def test_収支部分更新_amountだけ(client, auth):
 
 def test_summary_取引ゼロの期間は全て0(client, auth):
     r = client.get("/transactions/summary",
-                    params={"type": "monthly", "year": 2099, "month": 1},
-                    headers=auth["headers"])
+                params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
     assert r.status_code == 200
     assert r.json() == {"income": 0, "expense": 0, "balance": 0}
 
@@ -128,7 +119,7 @@ def test_負のamountは422(client, auth):
 def test_収支一覧_指定した月以外は返らない(client, auth):
     client.post("/transactions", json={"amount": 1000, "type": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 1000, "type": "expense", "transaction_date": "2026-07-01"}, headers=auth["headers"])
-    response = client.get("/transactions", params={"type": "monthly", "year": 2026, "month": 8}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-10"}, headers=auth["headers"])
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["transaction_date"] == "2026-08-10"
@@ -138,3 +129,10 @@ def test_収支登録_日付省略時に今日の日付が入る(client, auth):
     response = client.post("/transactions", json={"amount": 1000, "type": "expense"}, headers=auth["headers"])
     assert response.status_code == 200
     assert response.json()["transaction_date"] == today
+
+def test_summary_yearly_年をまたぐデータは含まれない(client, auth):
+    client.post("/transactions", json={"amount": 1000, "type": "expense", "transaction_date": "2026-03-10"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "type": "expense", "transaction_date": "2025-12-31"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-07-01"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["expense"] == 1000

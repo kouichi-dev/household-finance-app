@@ -20,7 +20,7 @@
 - カテゴリを登録・取得・更新・削除できる
 
 ### 集計
-- 月次で収支の合計を取得できる
+- 月次・年次で収支の合計を取得できる
 
 ## 非機能要件
 - パスワードはハッシュ化して保存する
@@ -47,14 +47,16 @@
     - transaction_date は省略可能。省略時は JST の今日を入れる
 - GET /transactions/summary  収支集計取得
     - クエリパラメータ:
-      - type: monthly
-      - year: 年（例: 2025）
-      - month: 月（monthlyのとき必須）
-    - 集計の基準: transaction_date（取引日）の年/月で集計する
+      - unit: monthly | yearly（省略時 monthly）
+      - on: 日付（例: 2026-08-15）。その日を含む期間を集計する
+    - 集計の基準: transaction_date（取引日）が期間に含まれるもの
     - レスポンス:
       - { "income": 収入合計, "expense": 支出合計, "balance": 収支差額(income - expense) }
 
 - GET     /transactions?page=1&limit=20   収支一覧取得
+    - クエリパラメータ:
+      - unit: monthly | yearly（省略時 monthly）
+      - on: 日付。省略時は期間で絞らない（全期間）
     - 並び順: transaction_date 降順、同日は id 降順（新しい順）
 - PATCH　 /transactions/{id}     収支更新
 - DELETE  /transactions/{id}     収支削除

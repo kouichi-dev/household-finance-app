@@ -56,12 +56,14 @@ def login_user(db, username, password):
     refresh_token = auth.create_refresh_token(db,db_user.id)
     return access_token,refresh_token
 
-def resolve_period(type, year, month):
-    if month is None:
-        raise HTTPException(status_code=422, detail="月の入力がありません")
-    start = date(year, month, 1)
-    last_day = calendar.monthrange(year, month)[1]   # その月の日数
-    end = date(year, month, last_day)
+def resolve_period(unit, on):
+    if unit == 'yearly':
+        start = date(on.year, 1, 1)
+        end = date(on.year, 12, 31)
+    else:
+        start = date(on.year, on.month, 1)
+        last_day = calendar.monthrange(on.year, on.month)[1]   # その月の日数
+        end = date(on.year, on.month, last_day)
     return start,end
 
 def get_user(db, user_id):
@@ -88,15 +90,15 @@ def create_transaction(db, user_id, transaction):
     _ensure_category_owned(db, user_id, transaction.category_id)
     return crud.create_transaction(db, user_id, transaction)
 
-def get_transactions(db, user_id, page, limit, type, year, month):
-    if year is None:
+def get_transactions(db, user_id, page, limit, unit, on):
+    if on is None:
         start, end = None, None
     else:
-        start, end = resolve_period(type, year, month)
+        start, end = resolve_period(unit, on)
     return crud.get_transactions(db, user_id, page, limit, start, end)
 
-def get_transactions_summary(db, user_id, type, year, month):
-    start, end = resolve_period(type, year, month)
+def get_transactions_summary(db, user_id, unit, on):
+    start, end = resolve_period(unit, on)
     row = crud.get_transactions_summary(db, user_id, start, end)
     balance = row.income - row.expense
     return {"income": row.income, "expense": row.expense, "balance": balance}

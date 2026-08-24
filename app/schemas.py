@@ -50,7 +50,8 @@ class TransactionResponse(BaseModel):
     created_at: datetime
     transaction_date: date
 
-class SummaryType(str, Enum):
+class PeriodUnit(str, Enum):
+    yearly = 'yearly'
     monthly = 'monthly'
 
 class CategoryCreate(BaseModel):
