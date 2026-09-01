@@ -87,7 +87,7 @@
 - category_id INTEGER FOREIGN KEY('categories.id')
 - amount INTEGER NOT NULL
 - description VARCHAR(50) NULLABLE
-- type VARCHAR(10) NOT NULL CHECK(type IN ('income', 'expense'))
+- kind VARCHAR(10) NOT NULL CHECK(kind IN ('income', 'expense'))
 - transaction_date DATE NOT NULL
 - created_at TIMESTAMP NOT NULL
 
