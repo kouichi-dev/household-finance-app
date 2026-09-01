@@ -92,7 +92,7 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     db_transaction = Transaction(
         user_id=user_id,
         amount=transaction.amount,
-        type=transaction.type,
+        kind=transaction.kind,
         description=transaction.description,
         category_id=transaction.category_id,
         transaction_date=transaction.transaction_date)
@@ -128,8 +128,8 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int, start: da
 def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
     stmt = (
         select(
-            func.coalesce(func.sum(case((Transaction.type == 'income', Transaction.amount), else_=0)), 0).label("income"),
-            func.coalesce(func.sum(case((Transaction.type == 'expense', Transaction.amount), else_=0)), 0).label("expense"),
+            func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0).label("income"),
+            func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0).label("expense"),
         )
         .where(
             Transaction.user_id == user_id,

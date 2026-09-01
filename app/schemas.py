@@ -23,20 +23,20 @@ class UserResponse(BaseModel):
     name: str
     email: str
 
-class TransactionType(str, Enum):
+class TransactionKind(str, Enum):
     income = 'income'
     expense = 'expense'
 
 class TransactionCreate(BaseModel):
     amount: int = Field(ge=0)
-    type: TransactionType
+    kind: TransactionKind
     transaction_date: date | None = None
     description: str | None = None
     category_id: int | None = None
 
 class TransactionUpdate(BaseModel):
     amount: int | None = Field(default=None, ge=0)
-    type: TransactionType | None = None
+    kind: TransactionKind | None = None
     transaction_date: date | None = None
     description: str | None = None
     category_id: int | None = None
@@ -44,7 +44,7 @@ class TransactionUpdate(BaseModel):
 class TransactionResponse(BaseModel):
     id: int
     amount: int
-    type: TransactionType
+    kind: TransactionKind
     description: str | None = None
     category_id: int | None = None
     created_at: datetime

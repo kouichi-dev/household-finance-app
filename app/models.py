@@ -17,11 +17,11 @@ class Transaction(Base):
     category_id = Column('category_id',Integer,ForeignKey('categories.id', ondelete='SET NULL'),nullable=True)
     amount = Column('amount',Integer,nullable=False)
     description = Column('description',String(50),nullable=True)
-    type = Column('type',String(10),nullable=False)
+    kind = Column('kind',String(10),nullable=False)
     transaction_date = Column('transaction_date', Date, nullable=False)
     created_at = Column('created_at',DateTime(timezone=True),server_default=func.now(),nullable=False)
     __table_args__ = (
-    CheckConstraint("type IN ('income','expense')", name='ck_transactions_type'),
+    CheckConstraint("kind IN ('income','expense')", name='ck_transactions_kind'),
     CheckConstraint("amount >= 0", name='ck_transactions_amount_nonneg'),
     )
 
