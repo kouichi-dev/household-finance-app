@@ -136,3 +136,29 @@ def test_summary_yearly_年をまたぐデータは含まれない(client, auth)
     response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-07-01"}, headers=auth["headers"])
     assert response.status_code == 200
     assert response.json()["expense"] == 1000
+
+def test_収支一覧_未分類だけ取得(client, auth):
+    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["category_id"] is None
+
+def test_収支集計_集計で未分類だけ取得(client, auth):
+    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["expense"] == 5000
+
+def test_収支一覧_収支の種別で取得(client, auth):
+    client.post("/transactions", json={"amount": 5000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "kind": "income"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["kind"] == "income"
+

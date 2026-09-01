@@ -90,16 +90,16 @@ def create_transaction(db, user_id, transaction):
     _ensure_category_owned(db, user_id, transaction.category_id)
     return crud.create_transaction(db, user_id, transaction)
 
-def get_transactions(db, user_id, page, limit, unit, on):
+def get_transactions(db, user_id, page, limit, unit, on, category_id, kind):
     if on is None:
         start, end = None, None
     else:
         start, end = resolve_period(unit, on)
-    return crud.get_transactions(db, user_id, page, limit, start, end)
+    return crud.get_transactions(db, user_id, page, limit, start, end, category_id, kind)
 
-def get_transactions_summary(db, user_id, unit, on):
+def get_transactions_summary(db, user_id, unit, on, category_id, kind):
     start, end = resolve_period(unit, on)
-    row = crud.get_transactions_summary(db, user_id, start, end)
+    row = crud.get_transactions_summary(db, user_id, start, end, category_id, kind)
     balance = row.income - row.expense
     return {"income": row.income, "expense": row.expense, "balance": balance}
 

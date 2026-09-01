@@ -101,16 +101,24 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     db.refresh(db_transaction)
     return db_transaction
 
-def build_filters(user_id: int, start: date | None, end: date | None):
+def build_filters(user_id: int, start: date | None, end: date | None, category_id, kind):
     filters = [Transaction.user_id == user_id]
+    if category_id == "none":
+        filters.append(Transaction.category_id.is_(None))
+    elif category_id is not None:
+        filters.append(Transaction.category_id == category_id)
+
+    if kind is not None:
+        filters.append(Transaction.kind == kind)
+
     if start is not None:
         filters.append(Transaction.transaction_date >= start)
         filters.append(Transaction.transaction_date <= end)
     return filters
 
-def get_transactions(db: Session, user_id: int, page: int, limit: int, start: date, end: date):
+def get_transactions(db: Session, user_id: int, page: int, limit: int, start: date, end: date, category_id, kind):
     offset = (page - 1) * limit
-    filters = build_filters(user_id, start, end)
+    filters = build_filters(user_id, start, end, category_id, kind)
     stmt = (
         select(Transaction)
         .where(*filters)
@@ -120,8 +128,8 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int, start: da
     )
     return db.execute(stmt).scalars().all()
 
-def get_transactions_summary(db: Session, user_id: int, start: date, end: date):
-    filters = build_filters(user_id, start, end)
+def get_transactions_summary(db: Session, user_id: int, start: date, end: date, category_id, kind):
+    filters = build_filters(user_id, start, end, category_id, kind)
     stmt = (
         select(
             func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0).label("income"),
