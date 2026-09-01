@@ -49,6 +49,9 @@
     - クエリパラメータ:
       - unit: monthly | yearly（省略時 monthly）
       - on: 日付（例: 2026-08-15）。その日を含む期間を集計する
+      - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
+      - kind: income | expense。省略時は絞らない
+    - 未分類は文字列 `none` を送る。`null` や空文字、0 ではない
     - 集計の基準: transaction_date（取引日）が期間に含まれるもの
     - レスポンス:
       - { "income": 収入合計, "expense": 支出合計, "balance": 収支差額(income - expense) }
@@ -57,6 +60,8 @@
     - クエリパラメータ:
       - unit: monthly | yearly（省略時 monthly）
       - on: 日付。省略時は期間で絞らない（全期間）
+      - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
+      - kind: income | expense。省略時は絞らない
     - 並び順: transaction_date 降順、同日は id 降順（新しい順）
 - PATCH　 /transactions/{id}     収支更新
 - DELETE  /transactions/{id}     収支削除
