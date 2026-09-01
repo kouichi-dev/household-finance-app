@@ -13,11 +13,11 @@ def test_ログイン(client):
     assert response.status_code == 200
     assert "access_token" in response.json()
 
-def test_存在しないユーザーログイン(client):
+def test_存在しないユーザーのログインは401(client):
     response = client.post("/auth/login", data={"username": "nobody@example.com", "password": "x"})
     assert response.status_code == 401
 
-def test_他人のデータへのアクセス(client, auth):
+def test_他人のデータへのアクセスは403(client, auth):
     user_b = client.post("/users", json={
         "name": "jiro",
         "email": "jiro@example.com",
@@ -37,7 +37,7 @@ def test_ユーザー更新(client, auth):
     assert response.status_code == 200
     assert response.json()["name"] == "jiro"
 
-def test_存在しないユーザー更新(client, auth):
+def test_他人のIDでは更新できない(client, auth):
     response = client.patch("/users/9999", json={"name": "x", "email": "x@x.com", "password": "x"}, headers=auth["headers"])
     assert response.status_code == 403
 

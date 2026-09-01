@@ -19,7 +19,7 @@ def test_収支一覧取得(client, auth):
     assert len(response.json()["items"]) > 0
 
 
-def test_認証なしアクセス(client):
+def test_認証なしアクセスは401(client):
     response = client.get("/transactions")
     assert response.status_code == 401
 
@@ -103,7 +103,7 @@ def test_収支部分更新_amountだけ(client, auth):
     assert r.json()["amount"] == 2000
     assert r.json()["description"] == "ランチ"   # 送ってないので不変
 
-def test_summary_取引ゼロの期間は全て0(client, auth):
+def test_収支集計_取引ゼロの期間は全て0(client, auth):
     r = client.get("/transactions/summary",
                 params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
     assert r.status_code == 200
@@ -130,14 +130,14 @@ def test_収支登録_日付省略時に今日の日付が入る(client, auth):
     assert response.status_code == 200
     assert response.json()["transaction_date"] == today
 
-def test_summary_yearly_年をまたぐデータは含まれない(client, auth):
+def test_収支集計_年をまたぐデータは含まれない(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-03-10"}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2025-12-31"}, headers=auth["headers"])
     response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-07-01"}, headers=auth["headers"])
     assert response.status_code == 200
     assert response.json()["expense"] == 1000
 
-def test_収支一覧_未分類だけ取得(client, auth):
+def test_収支一覧_未分類だけ返る(client, auth):
     category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
@@ -146,7 +146,7 @@ def test_収支一覧_未分類だけ取得(client, auth):
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["category_id"] is None
 
-def test_収支集計_集計で未分類だけ取得(client, auth):
+def test_収支集計_未分類だけ集計される(client, auth):
     category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
@@ -154,7 +154,7 @@ def test_収支集計_集計で未分類だけ取得(client, auth):
     assert response.status_code == 200
     assert response.json()["expense"] == 5000
 
-def test_収支一覧_収支の種別で取得(client, auth):
+def test_収支一覧_指定した種別だけ返る(client, auth):
     client.post("/transactions", json={"amount": 5000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
     response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "kind": "income"}, headers=auth["headers"])
@@ -162,7 +162,7 @@ def test_収支一覧_収支の種別で取得(client, auth):
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["kind"] == "income"
 
-def test_収支一覧_toral_countはlimitを超えた全件数を返す(client, auth):
+def test_収支一覧_total_countはlimitを超えた全件数を返す(client, auth):
     client.post("/transactions", json={"amount": 2000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 1050, "kind": "income", "transaction_date": "2026-08-20"}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 6000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
