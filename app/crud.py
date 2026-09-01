@@ -101,41 +101,33 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     db.refresh(db_transaction)
     return db_transaction
 
+def build_filters(user_id: int, start: date | None, end: date | None):
+    filters = [Transaction.user_id == user_id]
+    if start is not None:
+        filters.append(Transaction.transaction_date >= start)
+        filters.append(Transaction.transaction_date <= end)
+    return filters
+
 def get_transactions(db: Session, user_id: int, page: int, limit: int, start: date, end: date):
-    if start is None and end is None:
-        offset = (page - 1) * limit
-        stmt = (
-            select(Transaction)
-            .where(Transaction.user_id == user_id)
-            .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
-            .offset(offset)
-            .limit(limit)
-        )
-    else:
-        offset = (page - 1) * limit
-        stmt = (
-            select(Transaction)
-            .where(
-                Transaction.user_id == user_id,
-                Transaction.transaction_date >= start,
-                Transaction.transaction_date <= end)
-            .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
-            .offset(offset)
-            .limit(limit)
-        )
+    offset = (page - 1) * limit
+    filters = build_filters(user_id, start, end)
+    stmt = (
+        select(Transaction)
+        .where(*filters)
+        .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
+        .offset(offset)
+        .limit(limit)
+    )
     return db.execute(stmt).scalars().all()
 
-def get_transactions_summary(db: Session, user_id: int, start_date, end_date):
+def get_transactions_summary(db: Session, user_id: int, start: date, end: date):
+    filters = build_filters(user_id, start, end)
     stmt = (
         select(
             func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0).label("income"),
             func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0).label("expense"),
         )
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.transaction_date >= start_date,
-            Transaction.transaction_date <= end_date,
-        )
+        .where(*filters)
     )
     return db.execute(stmt).first()
 
