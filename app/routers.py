@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse,TransactionKind
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse,TransactionKind,TransactionListResponse
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -75,7 +75,7 @@ def logout_endpoint(token: RefreshTokenBody, db: Session = Depends(get_db)):
 def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     return services.create_transaction(db, current_user.id, transaction)
 
-@router.get("/transactions",response_model=list[TransactionResponse])
+@router.get("/transactions",response_model=TransactionListResponse)
 def get_transaction_endpoint(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),

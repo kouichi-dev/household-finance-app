@@ -46,6 +46,7 @@ class TransactionResponse(BaseModel):
     amount: int
     kind: TransactionKind
     description: str | None = None
+    category_name: str | None = None
     category_id: int | None = None
     created_at: datetime
     transaction_date: date
@@ -53,6 +54,11 @@ class TransactionResponse(BaseModel):
 class PeriodUnit(str, Enum):
     yearly = 'yearly'
     monthly = 'monthly'
+
+class PeriodResponse(BaseModel):
+    unit: PeriodUnit
+    start: date
+    end: date
 
 class CategoryCreate(BaseModel):
     name: str
@@ -63,3 +69,13 @@ class CategoryUpdate(BaseModel):
 class CategoryResponse(BaseModel):
     id: int
     name: str
+
+class TransactionListResponse(BaseModel):
+    period: PeriodResponse | None
+    prev_on: date | None
+    next_on: date | None
+    items: list[TransactionResponse]
+    total_count: int
+    page: int
+    limit: int
+    

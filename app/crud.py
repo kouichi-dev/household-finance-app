@@ -120,13 +120,24 @@ def get_transactions(db: Session, user_id: int, page: int, limit: int, start: da
     offset = (page - 1) * limit
     filters = build_filters(user_id, start, end, category_id, kind)
     stmt = (
-        select(Transaction)
+        select(Transaction, Category.name)
+        .outerjoin(Category, Transaction.category_id == Category.id)
         .where(*filters)
         .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
         .offset(offset)
         .limit(limit)
     )
-    return db.execute(stmt).scalars().all()
+    rows = db.execute(stmt).all()
+    transactions = []
+    for transaction, category_name in rows:
+        transaction.category_name = category_name
+        transactions.append(transaction)
+    return transactions
+
+def count_transactions(db: Session, user_id: int, start: date, end: date, category_id, kind):
+    filters = build_filters(user_id, start, end, category_id, kind)
+    stmt = select(func.count()).select_from(Transaction).where(*filters)
+    return db.execute(stmt).scalar_one()
 
 def get_transactions_summary(db: Session, user_id: int, start: date, end: date, category_id, kind):
     filters = build_filters(user_id, start, end, category_id, kind)

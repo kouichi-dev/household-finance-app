@@ -4,7 +4,7 @@ import crud
 import auth
 from fastapi import HTTPException
 from exceptions import EmailAlreadyExistsError, CategoryAlreadyExistsError
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
 
@@ -93,9 +93,23 @@ def create_transaction(db, user_id, transaction):
 def get_transactions(db, user_id, page, limit, unit, on, category_id, kind):
     if on is None:
         start, end = None, None
+        period, prev_on, next_on = None, None, None
     else:
         start, end = resolve_period(unit, on)
-    return crud.get_transactions(db, user_id, page, limit, start, end, category_id, kind)
+        period = {"unit": unit, "start": start, "end": end}
+        prev_on = resolve_period(unit, start - timedelta(days=1))[0]
+        next_on = resolve_period(unit, end + timedelta(days=1))[0]
+    items = crud.get_transactions(db, user_id, page, limit, start, end, category_id, kind)
+    total_count = crud.count_transactions(db, user_id, start, end, category_id, kind)
+    return {
+        "period": period,
+        "prev_on": prev_on,
+        "next_on": next_on,
+        "items": items,
+        "total_count": total_count,
+        "page": page,
+        "limit": limit
+    }
 
 def get_transactions_summary(db, user_id, unit, on, category_id, kind):
     start, end = resolve_period(unit, on)

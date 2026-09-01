@@ -16,7 +16,7 @@ def test_収支一覧取得(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
     response = client.get("/transactions?page=1&limit=20", headers=auth["headers"])
     assert response.status_code == 200
-    assert len(response.json()) > 0
+    assert len(response.json()["items"]) > 0
 
 
 def test_認証なしアクセス(client):
@@ -121,8 +121,8 @@ def test_収支一覧_指定した月以外は返らない(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-07-01"}, headers=auth["headers"])
     response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-10"}, headers=auth["headers"])
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["transaction_date"] == "2026-08-10"
+    assert len(response.json()["items"]) == 1
+    assert response.json()["items"][0]["transaction_date"] == "2026-08-10"
 
 def test_収支登録_日付省略時に今日の日付が入る(client, auth):
     today = datetime.now(ZoneInfo("Asia/Tokyo")).date().isoformat()
@@ -143,8 +143,8 @@ def test_収支一覧_未分類だけ取得(client, auth):
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
     response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["category_id"] is None
+    assert len(response.json()["items"]) == 1
+    assert response.json()["items"][0]["category_id"] is None
 
 def test_収支集計_集計で未分類だけ取得(client, auth):
     category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
@@ -159,6 +159,32 @@ def test_収支一覧_収支の種別で取得(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
     response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "kind": "income"}, headers=auth["headers"])
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["kind"] == "income"
+    assert len(response.json()["items"]) == 1
+    assert response.json()["items"][0]["kind"] == "income"
+
+def test_収支一覧_toral_countはlimitを超えた全件数を返す(client, auth):
+    client.post("/transactions", json={"amount": 2000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1050, "kind": "income", "transaction_date": "2026-08-20"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 6000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-01", "limit": 2}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 2
+    assert response.json()["total_count"] == 3
+
+def test_収支一覧_年をまたいでも前後の期間が返る(client, auth):
+    response = client.get("/transactions", params={"unit": "monthly", "on": "2026-01-15"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["period"] == {"unit": "monthly", "start": "2026-01-01", "end": "2026-01-31"}
+    assert response.json()["prev_on"] == "2025-12-01"
+    assert response.json()["next_on"] == "2026-02-01"
+
+def test_収支一覧_カテゴリ名を取得(client, auth):
+    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 1000, "kind": "income", "transaction_date": "2026-08-20", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 3050, "kind": "income", "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-01"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 2
+    assert response.json()["items"][0]["category_name"] == "食費"
+    assert response.json()["items"][1]["category_name"] is None
 
