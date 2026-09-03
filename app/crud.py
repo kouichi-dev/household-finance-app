@@ -18,7 +18,7 @@ def data_save_refresh_token(db: Session, user_id: int, token: str, expires_at: d
     )
     db.add(db_refresh_tokens)
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise TokenAlreadyExistsError()
@@ -35,7 +35,7 @@ def revoke_refresh_token(db: Session, token):
     if not db_refresh_token:
         return None
     db_refresh_token.revoked=True
-    db.commit()
+    db.flush()
     db.refresh(db_refresh_token)
     return db_refresh_token
 
@@ -45,7 +45,7 @@ def create_user(db: Session, user: UserCreate):
     db_user = User(name=user.name,email=user.email,password=user.password)
     db.add(db_user)
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise EmailAlreadyExistsError()
@@ -62,7 +62,7 @@ def update_user(db: Session, data: dict, user_id: int):
     for key, value in data.items():
         setattr(db_user, key, value)                     # 送られた項目だけ上書き
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise EmailAlreadyExistsError()
@@ -75,7 +75,7 @@ def delete_user(db: Session, user_id: int):
     if not db_user:
         return None
     db.delete(db_user)
-    db.commit()
+    db.flush()
 
     return db_user
 
@@ -97,7 +97,7 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
         category_id=transaction.category_id,
         transaction_date=transaction.transaction_date)
     db.add(db_transaction)
-    db.commit()
+    db.flush()
     db.refresh(db_transaction)
     return db_transaction
 
@@ -157,7 +157,7 @@ def update_transaction(db: Session, user_id: int, transaction_id: int, data: dic
         return None
     for key, value in data.items():
         setattr(db_transaction, key, value)  # transaction_date も含め送られた項目を全反映
-    db.commit()
+    db.flush()
     db.refresh(db_transaction)
     return db_transaction
 
@@ -168,7 +168,7 @@ def delete_transaction(db: Session, user_id: int, transaction_id: int):
     if not db_transaction:
         return None
     db.delete(db_transaction)
-    db.commit()
+    db.flush()
     return db_transaction
 
 # category_crud
@@ -177,7 +177,7 @@ def create_category(db: Session, user_id: int, category: CategoryCreate):
     db_category = Category(user_id=user_id,name=category.name)
     db.add(db_category)
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise CategoryAlreadyExistsError()
@@ -199,7 +199,7 @@ def update_category(db: Session, user_id: int, category_id: int, data: dict):
         return None
     for key, value in data.items():
         setattr(db_category, key, value)
-    db.commit()
+    db.flush()
     db.refresh(db_category)
     return db_category
 
@@ -210,7 +210,7 @@ def delete_category(db: Session, user_id: int, category_id: int):
     if not db_category:
         return None
     db.delete(db_category)
-    db.commit()
+    db.flush()
     return db_category
 
 
