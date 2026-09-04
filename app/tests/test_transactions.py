@@ -58,7 +58,7 @@ def test_他人のカテゴリは紐づけできない(client, auth):
     client.post("/users", json={"name": "jiro", "email": "jiro@example.com", "password": "password123"})
     login_b = client.post("/auth/login", data={"username": "jiro@example.com", "password": "password123"}).json()
     headers_b = {"Authorization": f"Bearer {login_b['access_token']}"}
-    category_b = client.post("/categories", json={"name": "娯楽"}, headers=headers_b).json()
+    category_b = client.post("/categories", json={"name": "通信費"}, headers=headers_b).json()
 
     # A（auth）が B のカテゴリidで収支作成 → 404
     response = client.post("/transactions", json={
@@ -77,7 +77,7 @@ def test_存在しないカテゴリは紐づけできない(client, auth):
 
 # 自分のカテゴリなら正常に紐づく（正規フローが壊れてない確認）
 def test_自分のカテゴリは紐づけできる(client, auth):
-    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
     response = client.post("/transactions", json={
         "amount": 1000, "kind": "expense", "transaction_date": "2026-06-15",
         "category_id": category["id"]
@@ -138,7 +138,7 @@ def test_収支集計_年をまたぐデータは含まれない(client, auth):
     assert response.json()["expense"] == 1000
 
 def test_収支一覧_未分類だけ返る(client, auth):
-    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
     response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
@@ -147,7 +147,7 @@ def test_収支一覧_未分類だけ返る(client, auth):
     assert response.json()["items"][0]["category_id"] is None
 
 def test_収支集計_未分類だけ集計される(client, auth):
-    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
     client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
     response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
@@ -179,12 +179,12 @@ def test_収支一覧_年をまたいでも前後の期間が返る(client, auth
     assert response.json()["next_on"] == "2026-02-01"
 
 def test_収支一覧_カテゴリ名を取得(client, auth):
-    category = client.post("/categories", json={"name": "食費"}, headers=auth["headers"]).json()
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
     client.post("/transactions", json={"amount": 1000, "kind": "income", "transaction_date": "2026-08-20", "category_id": category["id"]}, headers=auth["headers"])
     client.post("/transactions", json={"amount": 3050, "kind": "income", "transaction_date": "2026-08-10"}, headers=auth["headers"])
     response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-01"}, headers=auth["headers"])
     assert response.status_code == 200
     assert len(response.json()["items"]) == 2
-    assert response.json()["items"][0]["category_name"] == "食費"
+    assert response.json()["items"][0]["category_name"] == "通信費"
     assert response.json()["items"][1]["category_name"] is None
 

@@ -22,4 +22,3 @@ def test_リフレッシュトークンはログアウト後に401(client, auth)
     assert logout.status_code == 204
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert response.status_code == 401
-

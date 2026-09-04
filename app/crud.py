@@ -184,6 +184,10 @@ def create_category(db: Session, user_id: int, category: CategoryCreate):
     db.refresh(db_category)
     return db_category
 
+def create_preset_categories(db: Session, user_id: int, names: list):
+    db_categories = [Category(user_id=user_id, name=name) for name in names]
+    db.add_all(db_categories)
+
 def get_category(db: Session, user_id: int, category_id: int):
     stmt = select(Category).where(Category.user_id==user_id, Category.id==category_id)
     return db.execute(stmt).scalar_one_or_none()

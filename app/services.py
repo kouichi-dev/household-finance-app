@@ -10,6 +10,7 @@ import calendar
 
 
 _EMAIL_DUP = "このメールアドレスは既に使われています"
+_PRESET_CATEGORIES = ("食費", "日用品", "交通費", "住居", "娯楽", "給与")
 
 def refresh_access_token(db,refresh_token):
     refresh_token = auth.verify_refresh_token(db,refresh_token)
@@ -29,9 +30,11 @@ def create_user(db,user):
         raise HTTPException(status_code=409, detail= _EMAIL_DUP)
     user.password = auth.hash_password(user.password)
     try:
-        return crud.create_user(db, user)
+        db_user = crud.create_user(db, user)
     except EmailAlreadyExistsError:
         raise HTTPException(status_code=409, detail= _EMAIL_DUP)
+    crud.create_preset_categories(db, db_user.id, _PRESET_CATEGORIES)
+    return db_user
 
 def update_user(db, user, user_id):
     data = user.model_dump(exclude_unset=True)          # 送られたキーだけ
