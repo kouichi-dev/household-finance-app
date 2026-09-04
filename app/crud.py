@@ -139,16 +139,23 @@ def count_transactions(db: Session, user_id: int, start: date, end: date, catego
     stmt = select(func.count()).select_from(Transaction).where(*filters)
     return db.execute(stmt).scalar_one()
 
-def get_transactions_summary(db: Session, user_id: int, start: date, end: date, category_id, kind):
+def get_summary_by_category(db: Session, user_id: int, start: date, end: date, category_id, kind):
     filters = build_filters(user_id, start, end, category_id, kind)
+    income = func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0)
+    expense = func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0)
     stmt = (
         select(
-            func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0).label("income"),
-            func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0).label("expense"),
+            Transaction.category_id,
+            Category.name.label("category_name"),
+            income.label("income"),
+            expense.label("expense"),
         )
+        .outerjoin(Category, Transaction.category_id == Category.id)
         .where(*filters)
+        .group_by(Transaction.category_id, Category.name)
+        .order_by((income + expense).desc())
     )
-    return db.execute(stmt).first()
+    return db.execute(stmt).all()
 
 def update_transaction(db: Session, user_id: int, transaction_id: int, data: dict):
     stmt = select(Transaction).where(Transaction.user_id == user_id, Transaction.id == transaction_id)

@@ -116,9 +116,15 @@ def get_transactions(db, user_id, page, limit, unit, on, category_id, kind):
 
 def get_transactions_summary(db, user_id, unit, on, category_id, kind):
     start, end = resolve_period(unit, on)
-    row = crud.get_transactions_summary(db, user_id, start, end, category_id, kind)
-    balance = row.income - row.expense
-    return {"income": row.income, "expense": row.expense, "balance": balance}
+    rows = crud.get_summary_by_category(db, user_id, start, end, category_id, kind)
+    income = sum(row.income for row in rows)
+    expense = sum(row.expense for row in rows)
+    return {
+        "income": income,
+        "expense": expense,
+        "balance": income - expense,
+        "by_category": rows
+    }
 
 def update_transaction(db, user_id, transaction_id, transaction):
     data = transaction.model_dump(exclude_unset=True)

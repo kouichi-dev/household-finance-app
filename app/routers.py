@@ -4,7 +4,7 @@ from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 import crud
-from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse,TransactionKind,TransactionListResponse
+from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse,TransactionKind,TransactionListResponse, TransactionSummaryResponse
 import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
@@ -92,7 +92,7 @@ def get_transaction_endpoint(
     db_transaction = services.get_transactions(db,current_user.id,page,limit,unit,on,category_id,kind)
     return db_transaction
 
-@router.get("/transactions/summary")
+@router.get("/transactions/summary", response_model=TransactionSummaryResponse)
 def get_transactions_summary_endpoint(
     on: date,
     unit: PeriodUnit = Query(PeriodUnit.monthly),

@@ -107,8 +107,7 @@ def test_収支集計_取引ゼロの期間は全て0(client, auth):
     r = client.get("/transactions/summary",
                 params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
     assert r.status_code == 200
-    assert r.json() == {"income": 0, "expense": 0, "balance": 0}
-
+    assert r.json() == {"income": 0, "expense": 0, "balance": 0, "by_category": []}
 
 def test_負のamountは422(client, auth):
     r = client.post("/transactions",
@@ -188,3 +187,18 @@ def test_収支一覧_カテゴリ名を取得(client, auth):
     assert response.json()["items"][0]["category_name"] == "通信費"
     assert response.json()["items"][1]["category_name"] is None
 
+def test_収支集計_カテゴリ別内訳が金額順で返る(client, auth):
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 3000, "kind": "expense",
+        "transaction_date": "2026-08-10", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "kind": "expense",
+        "transaction_date": "2026-08-11"}, headers=auth["headers"])
+    response = client.get("/transactions/summary",
+        params={"unit": "monthly", "on": "2026-08-15"}, headers=auth["headers"])
+    assert response.status_code == 200
+    by_category = response.json()["by_category"]
+    assert len(by_category) == 2
+    assert by_category[0]["category_id"] is None
+    assert by_category[0]["expense"] == 5000
+    assert by_category[1]["category_name"] == "通信費"
+    assert by_category[1]["expense"] == 3000
