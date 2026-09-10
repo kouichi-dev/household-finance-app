@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category,RefreshTokens
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError,CategoryAlreadyExistsError,TokenAlreadyExistsError
-from sqlalchemy import func,case,select
+from sqlalchemy import func,case,select,Date
 from datetime import datetime,date
 
 # refresh_token
@@ -154,6 +154,26 @@ def get_summary_by_category(db: Session, user_id: int, start: date, end: date, c
         .where(*filters)
         .group_by(Transaction.category_id, Category.name)
         .order_by((income + expense).desc())
+    )
+    return db.execute(stmt).all()
+
+def get_summary_by_date(db: Session, user_id: int, start: date, end: date, category_id, kind, unit: str):
+    filters = build_filters(user_id, start, end, category_id, kind)
+    if unit == 'yearly':
+        bucket = func.date_trunc('month', Transaction.transaction_date).cast(Date)
+    else:
+        bucket = Transaction.transaction_date
+    income = func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0)
+    expense = func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0)
+    stmt = (
+        select(
+            bucket.label("date"),
+            income.label("income"),
+            expense.label("expense"),
+        )
+        .where(*filters)
+        .group_by(bucket)
+        .order_by(bucket)
     )
     return db.execute(stmt).all()
 

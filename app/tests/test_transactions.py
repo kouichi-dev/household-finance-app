@@ -107,7 +107,7 @@ def test_収支集計_取引ゼロの期間は全て0(client, auth):
     r = client.get("/transactions/summary",
                 params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
     assert r.status_code == 200
-    assert r.json() == {"income": 0, "expense": 0, "balance": 0, "by_category": []}
+    assert r.json() == {"income": 0, "expense": 0, "balance": 0, "by_category": [], "by_date": []}
 
 def test_負のamountは422(client, auth):
     r = client.post("/transactions",
@@ -202,3 +202,48 @@ def test_収支集計_カテゴリ別内訳が金額順で返る(client, auth):
     assert by_category[0]["expense"] == 5000
     assert by_category[1]["category_name"] == "通信費"
     assert by_category[1]["expense"] == 3000
+
+def test_収支集計_日付別内訳が日付順で返る(client, auth):
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 500, "kind": "expense",
+        "transaction_date": "2026-08-12", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 3000, "kind": "expense",
+        "transaction_date": "2026-08-10", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "kind": "expense",
+        "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1000, "kind": "income",
+        "transaction_date": "2026-08-10", "category_id": category["id"]}, headers=auth["headers"])
+
+    response = client.get("/transactions/summary",
+        params={"unit": "monthly", "on": "2026-08-10"}, headers=auth["headers"])
+    assert response.status_code == 200
+    by_date = response.json()["by_date"]
+    assert by_date[0]["expense"] == 8000
+    assert by_date[0]["income"] == 1000
+    assert by_date[0]["date"] == "2026-08-10"
+    assert by_date[1]["date"] == "2026-08-12"
+
+def test_収支集計_yearlyは月ごとにまとめる(client, auth):
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 3000, "kind": "expense",
+        "transaction_date": "2026-08-10", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "kind": "expense",
+        "transaction_date": "2026-08-12"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1000, "kind": "expense",
+        "transaction_date": "2026-09-10"}, headers=auth["headers"])
+
+    response = client.get("/transactions/summary",
+        params={"unit": "yearly", "on": "2026-08-10"}, headers=auth["headers"])
+    assert response.status_code == 200
+    by_date = response.json()["by_date"]
+    assert response.json()["expense"] == 9000
+    assert len(by_date) == 2
+    assert by_date[0]["date"] == "2026-08-01"
+    assert by_date[1]["date"] == "2026-09-01"
+
+
+
+
+
+
+

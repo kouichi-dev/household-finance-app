@@ -57,7 +57,19 @@
     - 未分類は文字列 `none` を送る。`null` や空文字、0 ではない
     - 集計の基準: transaction_date（取引日）が期間に含まれるもの
     - レスポンス:
-      - { "income": 収入合計, "expense": 支出合計, "balance": 収支差額(income - expense) }
+      - {
+          "income": 収入合計,
+          "expense": 支出合計,
+          "balance": 収支差額(income - expense),
+          "by_category": [ { "category_id": ID | null, "category_name": 名前 | null, "income": 収入, "expense": 支出 } ],
+          "by_date":     [ { "date": 日付, "income": 収入, "expense": 支出 } ]
+        }
+    - income / expense は符号なしの正の値。差額は balance を使い、クライアント側で再計算しない
+    - by_category: 取引のあったカテゴリのみ返す。並び順は (income + expense) 降順
+      - 未分類は category_id / category_name が null
+    - by_date: 取引のあった日付のみ返す。取引ゼロの日は含めない。並び順は date 昇順
+      - unit=monthly は1日ごと、unit=yearly は月ごと（date はその月の1日）
+      - 収入と支出を分けて返す。給料日など同じ日に両方あるケースを差額1つでは表現できないため
 
 - GET     /transactions?page=1&limit=20   収支一覧取得
     - クエリパラメータ:

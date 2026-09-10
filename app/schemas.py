@@ -79,6 +79,11 @@ class TransactionListResponse(BaseModel):
     page: int
     limit: int
 
+class DateSummaryResponse(BaseModel):
+    date: date
+    income: int
+    expense: int
+
 class CategorySummaryResponse(BaseModel):
     category_id: int | None = None
     category_name: str | None = None
@@ -90,5 +95,6 @@ class TransactionSummaryResponse(BaseModel):
     expense: int
     balance: int
     by_category: list[CategorySummaryResponse]
+    by_date: list[DateSummaryResponse]
 
     
