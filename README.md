@@ -57,6 +57,8 @@ docker compose up --build
 
 ## エンドポイント一覧
 
+![Swagger UI のエンドポイント一覧](docs/swagger-endpoints.png)
+
 認証欄の「必要」は `Authorization: Bearer <access_token>` ヘッダーが必要です。
 
 ### ユーザー・認証
@@ -93,19 +95,21 @@ docker compose up --build
 
 集計のレスポンス例（`unit=monthly&on=2026-08-15`）:
 
+![集計のレスポンス](docs/swagger-summary.png)
+
 ```json
 {
   "income": 250000,
-  "expense": 8500,
-  "balance": 241500,
+  "expense": 4200,
+  "balance": 245800,
   "by_category": [
-    { "category_id": 6, "category_name": "給与", "income": 250000, "expense": 0 },
-    { "category_id": 1, "category_name": "食費", "income": 0, "expense": 8000 },
-    { "category_id": null, "category_name": null, "income": 0, "expense": 500 }
+    { "category_id": 7, "category_name": "給与", "income": 250000, "expense": 0 },
+    { "category_id": 2, "category_name": "食費", "income": 0, "expense": 3000 },
+    { "category_id": 3, "category_name": "日用品", "income": 0, "expense": 1200 }
   ],
   "by_date": [
-    { "date": "2026-08-10", "income": 0, "expense": 8000 },
-    { "date": "2026-08-12", "income": 0, "expense": 500 },
+    { "date": "2026-08-10", "income": 0, "expense": 3000 },
+    { "date": "2026-08-12", "income": 0, "expense": 1200 },
     { "date": "2026-08-25", "income": 250000, "expense": 0 }
   ]
 }
