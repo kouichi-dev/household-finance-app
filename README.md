@@ -30,7 +30,7 @@
 ### 手順
 
 ```bash
-git clone https://github.com/kouitchi-dev/household-finance-app.git
+git clone https://github.com/kouichi-dev/household-finance-app.git
 cd household-finance-app
 cp .env.example .env
 # .env を開き、CHANGE_ME の3箇所を実際の値に置き換える
