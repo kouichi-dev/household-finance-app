@@ -75,6 +75,12 @@ def get_user(db, user_id):
         raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
     return db_user
 
+def get_current_user(db, token):
+    user_id = auth.verify_token(token)
+    db_user = crud.get_users(db, int(user_id))
+    if db_user is None:
+        raise HTTPException(status_code=401, detail="ユーザーが存在しません")
+    return db_user
 
 def delete_user(db, user_id):
     if crud.delete_user(db, user_id) is None:

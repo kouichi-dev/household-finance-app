@@ -3,9 +3,7 @@
 from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
-import crud
 from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse,TransactionKind,TransactionListResponse, TransactionSummaryResponse
-import auth
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
 from fastapi import Depends
@@ -29,11 +27,7 @@ def get_db():
         db.close()
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    user_id = auth.verify_token(token)
-    user = crud.get_users(db, int(user_id))
-    if not user:
-        raise HTTPException(status_code=401, detail="ユーザーが存在しません")
-    return user
+    return services.get_current_user(db, token)
 
 def verify_self(user_id: int, current_user = Depends(get_current_user)):
     if current_user.id != user_id:
