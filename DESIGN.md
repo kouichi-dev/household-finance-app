@@ -78,6 +78,19 @@
       - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
       - kind: income | expense。省略時は絞らない
     - 並び順: transaction_date 降順、同日は id 降順（新しい順）
+    - レスポンス:
+      - {
+          "period": { "unit": monthly | yearly, "start": 期間の初日, "end": 期間の末日 } | null,
+          "prev_on": 前の期間の初日 | null,
+          "next_on": 次の期間の初日 | null,
+          "items": [ { "id", "amount", "kind", "description", "category_id", "category_name", "created_at", "transaction_date" } ],
+          "total_count": 絞り込み後の総件数（ページ分けする前）,
+          "page": ページ番号,
+          "limit": 1ページの件数
+        }
+    - on を省略したとき（全期間）は period / prev_on / next_on が null
+    - 前後の期間へ移るときは、prev_on / next_on をそのまま on に入れて送る。クライアントは日付を計算しない
+    - items[].category_name はサーバーが categories を LEFT JOIN して返す。未分類は category_id / category_name が null
 - PATCH　 /transactions/{id}     収支更新
 - DELETE  /transactions/{id}     収支削除
 
@@ -85,6 +98,8 @@
 - POST    /categories       カテゴリ登録
 - GET     /categories       カテゴリ一覧取得
     - 並び順: name 昇順
+    - 用途: 収支の登録・更新でカテゴリを選ぶための一覧（将来のカテゴリ管理画面でも使う）
+    - 期間や絞り込み（unit / on / category_id / kind）には連動しない。取引が0件のカテゴリも含めて全部返す
 - PATCH   /categories/{id}  カテゴリ更新
 - DELETE  /categories/{id}   カテゴリ削除
 
