@@ -15,26 +15,33 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 alembic_cfg = Config("alembic.ini")
 alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
 
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+@pytest.fixture(scope="session", autouse=True)
+def migrations():
+    command.upgrade(alembic_cfg, "head")
+    yield
+    command.downgrade(alembic_cfg, "base")
 
-app.dependency_overrides[get_db] = override_get_db
-
-# テストクライアントを渡す関数
 @pytest.fixture
 def client():
-    command.upgrade(alembic_cfg, "head")
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    def override_get_db():
+        db = TestingSessionLocal(bind=connection, join_transaction_mode="create_savepoint")
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
-    command.downgrade(alembic_cfg, "base")
+    transaction.rollback()
+    connection.close()
 
 # エンドポイントをテストするために、ログイン情報を返す
 @pytest.fixture
