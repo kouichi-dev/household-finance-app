@@ -9,7 +9,8 @@ from database import Base
 import models
 
 config = context.config
-config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL'))
+if not config.get_main_option('sqlalchemy.url'):
+    config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL'))
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 

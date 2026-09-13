@@ -2,15 +2,18 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database import Base
 from main import app
 from routers import get_db
 import os
+from alembic.config import Config
+from alembic import command
 
 SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+alembic_cfg = Config("alembic.ini")
+alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
 
 def override_get_db():
     db = TestingSessionLocal()
@@ -28,10 +31,10 @@ app.dependency_overrides[get_db] = override_get_db
 # テストクライアントを渡す関数
 @pytest.fixture
 def client():
-    Base.metadata.create_all(bind=engine)
+    command.upgrade(alembic_cfg, "head")
     with TestClient(app) as c:
         yield c
-    Base.metadata.drop_all(bind=engine)
+    command.downgrade(alembic_cfg, "base")
 
 # エンドポイントをテストするために、ログイン情報を返す
 @pytest.fixture
