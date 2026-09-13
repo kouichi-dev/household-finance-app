@@ -1,25 +1,26 @@
-
 from database import Base
-from sqlalchemy import Column,Integer,String,ForeignKey,DateTime,func,CheckConstraint,Date,UniqueConstraint,Boolean,Index
+from sqlalchemy import String,ForeignKey,DateTime,func,CheckConstraint,UniqueConstraint,Index
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import date, datetime
 
 class User(Base):
     __tablename__ = 'users'
-    id = Column('id',Integer,primary_key=True)
-    name = Column('name',String(20),nullable=False)
-    email = Column('email',String(30),unique=True,nullable=False)
-    password = Column('password',String(100),nullable=False)
-    created_at = Column('created_at',DateTime(timezone=True),server_default=func.now(),nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(20))
+    email: Mapped[str] = mapped_column(String(30), unique=True)
+    password: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 class Transaction(Base):
     __tablename__ = 'transactions'
-    id = Column('id',Integer,primary_key=True)
-    user_id = Column('user_id',Integer,ForeignKey('users.id', ondelete='CASCADE'),nullable=False)
-    category_id = Column('category_id',Integer,ForeignKey('categories.id', ondelete='SET NULL'),nullable=True)
-    amount = Column('amount',Integer,nullable=False)
-    description = Column('description',String(50),nullable=True)
-    kind = Column('kind',String(10),nullable=False)
-    transaction_date = Column('transaction_date', Date, nullable=False)
-    created_at = Column('created_at',DateTime(timezone=True),server_default=func.now(),nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
+    category_id: Mapped[int | None] = mapped_column(ForeignKey('categories.id', ondelete='SET NULL'))
+    amount: Mapped[int]
+    description: Mapped[str | None] = mapped_column(String(50))
+    kind: Mapped[str] = mapped_column(String(10))
+    transaction_date: Mapped[date]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (
     CheckConstraint("kind IN ('income','expense')", name='ck_transactions_kind'),
     CheckConstraint("amount >= 0", name='ck_transactions_amount_nonneg'),
@@ -29,18 +30,18 @@ class Transaction(Base):
 
 class Category(Base):
     __tablename__ = 'categories'
-    id = Column('id',Integer,primary_key=True)
-    user_id = Column('user_id',Integer,ForeignKey('users.id', ondelete='CASCADE'),nullable=False)
-    name = Column('name',String(50),nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
+    name: Mapped[str] = mapped_column(String(50))
     __table_args__ = (
         UniqueConstraint('user_id', 'name', name='uq_categories_user_id_name'),
     )
 
 class RefreshTokens(Base):
     __tablename__ = 'refresh_tokens'
-    id = Column('id',Integer,primary_key=True)
-    user_id = Column('user_id',Integer,ForeignKey('users.id', ondelete='CASCADE'),nullable=False)
-    token = Column('token',String(255), unique=True,nullable=False)
-    revoked = Column('revoked',Boolean,default=False,nullable=False)
-    expires_at = Column('expires_at',DateTime(timezone=True),nullable=False)
-    created_at = Column('created_at',DateTime(timezone=True),server_default=func.now(),nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
+    token: Mapped[str] = mapped_column(String(255), unique=True)
+    revoked: Mapped[bool] = mapped_column(default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
