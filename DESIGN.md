@@ -28,7 +28,7 @@
 - パスワードはハッシュ化して保存する
 - 認証にJWTを使用し、通常のAPIリクエストはステートレスに検証する
   - アクセストークン: JWTのみで検証（DB参照なし・ステートレス）
-  - リフレッシュトークン: DBに保存し、失効可能にする（再発行・ログアウト時のみDB参照）
+  - リフレッシュトークン: SHA-256 ハッシュでDBに保存し、失効可能にする（再発行・ログアウト時のみDB参照）
 - Dockerで環境を再現できる
 - Alembicでスキーマ変更を管理する
 - pytestでテストを書く
@@ -137,7 +137,7 @@
 ### refresh_tokensテーブル
 - id INTEGER PRIMARY KEY
 - user_id INTEGER FOREIGN KEY('users.id') NOT NULL
-- token VARCHAR(255) NOT NULL UNIQUE
+- token_hash VARCHAR(255) NOT NULL UNIQUE
 - expires_at TIMESTAMP NOT NULL
 - revoked BOOLEAN NOT NULL DEFAULT false
 - created_at TIMESTAMP NOT NULL

@@ -1,4 +1,5 @@
-from sqlalchemy import update
+import hashlib
+from sqlalchemy import update, select
 from models import RefreshTokens
 from datetime import datetime, timedelta, timezone
 
@@ -34,7 +35,7 @@ def test_不正なリフレッシュトークンは401を返す(client):
 def test_期限切れのリフレッシュトークンは401(client, auth, connection):
     connection.execute(
         update(RefreshTokens)
-        .where(RefreshTokens.token == auth["refresh_token"])
+        .where(RefreshTokens.token_hash == hashlib.sha256(auth["refresh_token"].encode()).hexdigest())
         .values(expires_at=datetime.now(timezone.utc) - timedelta(days=1))
     )
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
@@ -51,3 +52,8 @@ def test_リフレッシュトークンは名前変更後も有効(client, auth)
     assert updated.status_code == 200
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert response.status_code == 200
+
+def test_リフレッシュトークンはDBにハッシュで保存される(client, auth, connection):
+    saved = connection.execute(select(RefreshTokens.token_hash)).scalar_one()
+    assert saved != auth["refresh_token"]
+    assert saved == hashlib.sha256(auth["refresh_token"].encode()).hexdigest()

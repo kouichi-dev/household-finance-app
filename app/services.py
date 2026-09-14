@@ -18,7 +18,7 @@ def refresh_access_token(db,refresh_token):
     return {"access_token": access_token}
 
 def revoke_refresh_token(db,refresh_token):
-    db_refresh_token = crud.revoke_refresh_token(db,refresh_token)
+    db_refresh_token = crud.revoke_refresh_token(db, auth.hash_token(refresh_token))
     if db_refresh_token is None:
         raise HTTPException(status_code=404, detail="リフレッシュトークンが存在しません")
     return db_refresh_token

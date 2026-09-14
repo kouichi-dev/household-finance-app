@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 import secrets
 import crud
+import hashlib
 
 
 
@@ -16,6 +17,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str):
     return pwd_context.hash(password)
+
+def hash_token(token: str):
+    return hashlib.sha256(token.encode()).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
@@ -39,15 +43,14 @@ def verify_token(token: str):
 def create_refresh_token(db, user_id: int):
     expire = datetime.now(timezone.utc) + timedelta(days=30)
     token_string = secrets.token_urlsafe(32)
-    crud.data_save_refresh_token(db, user_id, token_string, expire)
+    crud.data_save_refresh_token(db, user_id, hash_token(token_string), expire)
     return token_string
 
 def verify_refresh_token(db,refresh_token: str):
-    row = crud.get_refresh_token(db,refresh_token)
+    row = crud.get_refresh_token(db, hash_token(refresh_token))
     if row is None or row.revoked == True or row.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="トークンが不正です")
     return row
-
         
         
     

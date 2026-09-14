@@ -10,10 +10,10 @@ from datetime import datetime,date
 
 # refresh_token
 
-def data_save_refresh_token(db: Session, user_id: int, token: str, expires_at: datetime):
+def data_save_refresh_token(db: Session, user_id: int, token_hash: str, expires_at: datetime):
     db_refresh_tokens = RefreshTokens(
         user_id=user_id,
-        token=token,
+        token_hash=token_hash,
         expires_at=expires_at
     )
     db.add(db_refresh_tokens)
@@ -25,12 +25,12 @@ def data_save_refresh_token(db: Session, user_id: int, token: str, expires_at: d
     db.refresh(db_refresh_tokens)
     return db_refresh_tokens
 
-def get_refresh_token(db: Session, token):
-    refresh_token = select(RefreshTokens).where(RefreshTokens.token==token)
+def get_refresh_token(db: Session, token_hash):
+    refresh_token = select(RefreshTokens).where(RefreshTokens.token_hash==token_hash)
     return db.execute(refresh_token).scalar_one_or_none()
 
-def revoke_refresh_token(db: Session, token):
-    stmt = select(RefreshTokens).where(RefreshTokens.token==token)
+def revoke_refresh_token(db: Session, token_hash):
+    stmt = select(RefreshTokens).where(RefreshTokens.token_hash==token_hash)
     db_refresh_token = db.execute(stmt).scalar_one_or_none()
     if not db_refresh_token:
         return None
