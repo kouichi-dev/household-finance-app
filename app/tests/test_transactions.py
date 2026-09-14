@@ -269,9 +269,15 @@ def test_収支集計_on省略時は今日を含む月を返す(client, auth):
     assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
     assert response.json()["expense"] == 1000
 
+def test_収支更新_amountにnullは422(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    response = client.patch(f"/transactions/{created['id']}", json={"amount": None}, headers=auth["headers"])
+    assert response.status_code == 422
 
 
-
-
-
+def test_収支更新_descriptionはnullで消せる(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15", "description": "スーパー"}, headers=auth["headers"]).json()
+    response = client.patch(f"/transactions/{created['id']}", json={"description": None}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["description"] is None
 

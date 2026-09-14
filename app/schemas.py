@@ -14,9 +14,9 @@ class UserCreate(BaseModel):
     password: str
 
 class UserUpdate(BaseModel):
-    name: str | None = None
-    email: str | None = None
-    password: str | None = None
+    name: str = None
+    email: str = None
+    password: str  = None
 
 class UserResponse(BaseModel):
     id: int
@@ -35,9 +35,9 @@ class TransactionCreate(BaseModel):
     category_id: int | None = None
 
 class TransactionUpdate(BaseModel):
-    amount: int | None = Field(default=None, ge=0)
-    kind: TransactionKind | None = None
-    transaction_date: date | None = None
+    amount: int = Field(default=None, ge=0)
+    kind: TransactionKind  = None
+    transaction_date: date  = None
     description: str | None = None
     category_id: int | None = None
 
@@ -64,7 +64,7 @@ class CategoryCreate(BaseModel):
     name: str
 
 class CategoryUpdate(BaseModel):
-    name: str | None = None
+    name: str = None
 
 class CategoryResponse(BaseModel):
     id: int

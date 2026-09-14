@@ -79,3 +79,11 @@ def test_メール変更後もトークンが有効(client, auth):
     # 変更前に取ったトークンで /users/me → まだ使える（id基盤なので）
     r = client.get("/users/me", headers=auth["headers"])
     assert r.status_code == 200
+
+def test_ユーザー更新_nameにnullは422(client, auth):
+    response = client.patch(f"/users/{auth['user_id']}", json={"name": None, "email": "jiro@example.com", "password": "newpass"}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_ユーザー更新_passwordにnullは422(client, auth):
+    response = client.patch(f"/users/{auth['user_id']}", json={"name": "jiro", "email": "jiro@example.com", "password": None}, headers=auth["headers"])
+    assert response.status_code == 422
