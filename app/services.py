@@ -69,6 +69,15 @@ def resolve_period(unit, on):
         end = date(on.year, on.month, last_day)
     return start,end
 
+def resolve_period_info(unit, on):
+    if on is None:
+        on = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    start, end = resolve_period(unit, on)
+    period = {"unit": unit, "start": start, "end": end}
+    prev_on = resolve_period(unit, start - timedelta(days=1))[0]
+    next_on = resolve_period(unit, end + timedelta(days=1))[0]
+    return start, end, period, prev_on, next_on
+
 def get_user(db, user_id):
     db_user = crud.get_users(db, user_id)
     if db_user is None:
@@ -100,14 +109,7 @@ def create_transaction(db, user_id, transaction):
     return crud.create_transaction(db, user_id, transaction)
 
 def get_transactions(db, user_id, page, limit, unit, on, category_id, kind):
-    if on is None:
-        start, end = None, None
-        period, prev_on, next_on = None, None, None
-    else:
-        start, end = resolve_period(unit, on)
-        period = {"unit": unit, "start": start, "end": end}
-        prev_on = resolve_period(unit, start - timedelta(days=1))[0]
-        next_on = resolve_period(unit, end + timedelta(days=1))[0]
+    start, end, period, prev_on, next_on = resolve_period_info(unit, on)
     items = crud.get_transactions(db, user_id, page, limit, start, end, category_id, kind)
     total_count = crud.count_transactions(db, user_id, start, end, category_id, kind)
     return {
@@ -121,12 +123,15 @@ def get_transactions(db, user_id, page, limit, unit, on, category_id, kind):
     }
 
 def get_transactions_summary(db, user_id, unit, on, category_id, kind):
-    start, end = resolve_period(unit, on)
+    start, end, period, prev_on, next_on = resolve_period_info(unit, on)
     category_rows = crud.get_summary_by_category(db, user_id, start, end, category_id, kind)
     date_rows = crud.get_summary_by_date(db, user_id, start, end, category_id, kind, unit)
     income = sum(row.income for row in category_rows)
     expense = sum(row.expense for row in category_rows)
     return {
+        "period": period,
+        "prev_on": prev_on,
+        "next_on": next_on,
         "income": income,
         "expense": expense,
         "balance": income - expense,

@@ -88,7 +88,7 @@ def get_transaction_endpoint(
 
 @router.get("/transactions/summary", response_model=TransactionSummaryResponse)
 def get_transactions_summary_endpoint(
-    on: date,
+    on: date | None = Query(None),
     unit: PeriodUnit = Query(PeriodUnit.monthly),
     category_id: int | Literal["none"] | None = Query(None),
     kind: TransactionKind | None = Query(None),

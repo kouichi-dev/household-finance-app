@@ -14,7 +14,7 @@ def test_収支登録(client, auth):
 
 def test_収支一覧取得(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
-    response = client.get("/transactions?page=1&limit=20", headers=auth["headers"])
+    response = client.get("/transactions?page=1&limit=20&on=2026-06-15", headers=auth["headers"])
     assert response.status_code == 200
     assert len(response.json()["items"]) > 0
 
@@ -107,7 +107,12 @@ def test_収支集計_取引ゼロの期間は全て0(client, auth):
     r = client.get("/transactions/summary",
                 params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
     assert r.status_code == 200
-    assert r.json() == {"income": 0, "expense": 0, "balance": 0, "by_category": [], "by_date": []}
+    assert r.json() == {
+        "period": {"unit": "monthly", "start": "2099-01-01", "end": "2099-01-31"},
+        "prev_on": "2098-12-01",
+        "next_on": "2099-02-01",
+        "income": 0, "expense": 0, "balance": 0, "by_category": [], "by_date": []
+    }
 
 def test_負のamountは422(client, auth):
     r = client.post("/transactions",
@@ -240,6 +245,29 @@ def test_収支集計_yearlyは月ごとにまとめる(client, auth):
     assert len(by_date) == 2
     assert by_date[0]["date"] == "2026-08-01"
     assert by_date[1]["date"] == "2026-09-01"
+
+def test_収支集計_年をまたいでも前後の期間が返る(client, auth):
+    response = client.get("/transactions/summary", params={"unit": "monthly", "on": "2026-01-15"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["period"] == {"unit": "monthly", "start": "2026-01-01", "end": "2026-01-31"}
+    assert response.json()["prev_on"] == "2025-12-01"
+    assert response.json()["next_on"] == "2026-02-01"
+
+def test_収支一覧_on省略時は今日を含む月を返す(client, auth):
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
+    response = client.get("/transactions", headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
+    assert len(response.json()["items"]) == 1
+
+def test_収支集計_on省略時は今日を含む月を返す(client, auth):
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
+    assert response.json()["expense"] == 1000
 
 
 

@@ -49,7 +49,7 @@ def test_カテゴリ削除で取引が未分類(client, auth):
         "category_id": category["id"]
     }, headers=auth["headers"])
     client.delete(f"/categories/{category["id"]}", headers=auth["headers"])
-    response = client.get("/transactions", headers=auth["headers"])
+    response = client.get("/transactions", params={"on": "2026-06-15"}, headers=auth["headers"])
     assert response.status_code == 200
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["category_id"] is None

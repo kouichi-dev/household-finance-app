@@ -71,9 +71,9 @@ class CategoryResponse(BaseModel):
     name: str
 
 class TransactionListResponse(BaseModel):
-    period: PeriodResponse | None
-    prev_on: date | None
-    next_on: date | None
+    period: PeriodResponse
+    prev_on: date
+    next_on: date
     items: list[TransactionResponse]
     total_count: int
     page: int
@@ -91,10 +91,11 @@ class CategorySummaryResponse(BaseModel):
     expense: int
 
 class TransactionSummaryResponse(BaseModel):
+    period: PeriodResponse
+    prev_on: date
+    next_on: date
     income: int
     expense: int
     balance: int
     by_category: list[CategorySummaryResponse]
     by_date: list[DateSummaryResponse]
-
-    
