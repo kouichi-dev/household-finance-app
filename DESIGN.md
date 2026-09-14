@@ -51,19 +51,23 @@
 - GET /transactions/summary  収支集計取得
     - クエリパラメータ:
       - unit: monthly | yearly（省略時 monthly）
-      - on: 日付（例: 2026-08-15）。その日を含む期間を集計する
+      - on: 日付（例: 2026-08-15）。その日を含む期間を集計する。省略時は JST の今日
       - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
       - kind: income | expense。省略時は絞らない
     - 未分類は文字列 `none` を送る。`null` や空文字、0 ではない
     - 集計の基準: transaction_date（取引日）が期間に含まれるもの
     - レスポンス:
       - {
+          "period": { "unit": monthly | yearly, "start": 期間の初日, "end": 期間の末日 },
+          "prev_on": 前の期間の初日,
+          "next_on": 次の期間の初日,
           "income": 収入合計,
           "expense": 支出合計,
           "balance": 収支差額(income - expense),
           "by_category": [ { "category_id": ID | null, "category_name": 名前 | null, "income": 収入, "expense": 支出 } ],
           "by_date":     [ { "date": 日付, "income": 収入, "expense": 支出 } ]
         }
+    - 前後の期間へ移るときは、prev_on / next_on をそのまま on に入れて送る。クライアントは日付を計算しない
     - income / expense は符号なしの正の値。差額は balance を使い、クライアント側で再計算しない
     - by_category: 取引のあったカテゴリのみ返す。並び順は (income + expense) 降順
       - 未分類は category_id / category_name が null
@@ -74,21 +78,20 @@
 - GET     /transactions?page=1&limit=20   収支一覧取得
     - クエリパラメータ:
       - unit: monthly | yearly（省略時 monthly）
-      - on: 日付。省略時は期間で絞らない（全期間）
+      - on: 日付。その日を含む期間の明細を返す。省略時は JST の今日
       - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
       - kind: income | expense。省略時は絞らない
     - 並び順: transaction_date 降順、同日は id 降順（新しい順）
     - レスポンス:
       - {
-          "period": { "unit": monthly | yearly, "start": 期間の初日, "end": 期間の末日 } | null,
-          "prev_on": 前の期間の初日 | null,
-          "next_on": 次の期間の初日 | null,
+          "period": { "unit": monthly | yearly, "start": 期間の初日, "end": 期間の末日 },
+          "prev_on": 前の期間の初日,
+          "next_on": 次の期間の初日,
           "items": [ { "id", "amount", "kind", "description", "category_id", "category_name", "created_at", "transaction_date" } ],
           "total_count": 絞り込み後の総件数（ページ分けする前）,
           "page": ページ番号,
           "limit": 1ページの件数
         }
-    - on を省略したとき（全期間）は period / prev_on / next_on が null
     - 前後の期間へ移るときは、prev_on / next_on をそのまま on に入れて送る。クライアントは日付を計算しない
     - items[].category_name はサーバーが categories を LEFT JOIN して返す。未分類は category_id / category_name が null
 - PATCH　 /transactions/{id}     収支更新
