@@ -230,10 +230,13 @@ def update_category(db: Session, user_id: int, category_id: int, data: dict):
         return None
     for key, value in data.items():
         setattr(db_category, key, value)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise CategoryAlreadyExistsError()
     db.refresh(db_category)
     return db_category
-
 
 def delete_category(db: Session, user_id: int, category_id: int):
     stmt = select(Category).where(Category.user_id==user_id,Category.id==category_id)

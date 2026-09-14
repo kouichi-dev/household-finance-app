@@ -160,11 +160,13 @@ def get_categories(db, user_id):
 
 def update_category(db, user_id, category_id, category):
     data = category.model_dump(exclude_unset=True)
-    updated = crud.update_category(db, user_id, category_id, data)
+    try:
+        updated = crud.update_category(db, user_id, category_id, data)
+    except CategoryAlreadyExistsError:
+        raise HTTPException(status_code=409, detail="このカテゴリ名は既に存在します")
     if updated is None:
         raise HTTPException(status_code=404, detail="カテゴリが見つかりません")
     return updated
-
 
 def delete_category(db, user_id, category_id):
     if crud.delete_category(db, user_id, category_id) is None:

@@ -53,3 +53,8 @@ def test_カテゴリ削除で取引が未分類(client, auth):
     assert response.status_code == 200
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["category_id"] is None
+
+def test_同名カテゴリへの更新は409(client, auth):
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
+    response = client.patch(f"/categories/{category['id']}", json={"name": "食費"}, headers=auth["headers"])
+    assert response.status_code == 409
