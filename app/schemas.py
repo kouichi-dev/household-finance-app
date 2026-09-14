@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from enum import Enum
 from datetime import datetime,date
 
@@ -9,14 +9,14 @@ class AccessTokenResponse(BaseModel):
     access_token: str
 
 class UserCreate(BaseModel):
-    name: str
-    email: str
+    name: str = Field(max_length=20)
+    email: EmailStr = Field(max_length=30)
     password: str
 
 class UserUpdate(BaseModel):
-    name: str = None
-    email: str = None
-    password: str  = None
+    name: str = Field(default=None, max_length=20)
+    email: EmailStr = Field(default=None, max_length=30)
+    password: str = None
 
 class UserResponse(BaseModel):
     id: int
@@ -28,17 +28,17 @@ class TransactionKind(str, Enum):
     expense = 'expense'
 
 class TransactionCreate(BaseModel):
-    amount: int = Field(ge=0)
+    amount: int = Field(ge=0, le=2147483647)   # PostgreSQL の INTEGER の上限
     kind: TransactionKind
     transaction_date: date | None = None
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=50)
     category_id: int | None = None
 
 class TransactionUpdate(BaseModel):
-    amount: int = Field(default=None, ge=0)
-    kind: TransactionKind  = None
-    transaction_date: date  = None
-    description: str | None = None
+    amount: int = Field(default=None, ge=0, le=2147483647)
+    kind: TransactionKind = None
+    transaction_date: date = None
+    description: str | None = Field(default=None, max_length=50)
     category_id: int | None = None
 
 class TransactionResponse(BaseModel):
@@ -61,10 +61,10 @@ class PeriodResponse(BaseModel):
     end: date
 
 class CategoryCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=50)
 
 class CategoryUpdate(BaseModel):
-    name: str = None
+    name: str = Field(default=None, max_length=50)
 
 class CategoryResponse(BaseModel):
     id: int

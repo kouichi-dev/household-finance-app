@@ -274,10 +274,23 @@ def test_収支更新_amountにnullは422(client, auth):
     response = client.patch(f"/transactions/{created['id']}", json={"amount": None}, headers=auth["headers"])
     assert response.status_code == 422
 
-
 def test_収支更新_descriptionはnullで消せる(client, auth):
     created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15", "description": "スーパー"}, headers=auth["headers"]).json()
     response = client.patch(f"/transactions/{created['id']}", json={"description": None}, headers=auth["headers"])
     assert response.status_code == 200
     assert response.json()["description"] is None
+
+def test_収支登録_descriptionが51文字は422(client, auth):
+    response = client.post("/transactions", json={"amount": 1000, "kind": "expense", "description": "a" * 51}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_収支登録_amountがINTEGERの上限を超えると422(client, auth):
+    response = client.post("/transactions", json={"amount": 2147483648, "kind": "expense"}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_収支更新_descriptionが51文字は422(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    response = client.patch(f"/transactions/{created['id']}", json={"description": "a" * 51}, headers=auth["headers"])
+    assert response.status_code == 422
+
 

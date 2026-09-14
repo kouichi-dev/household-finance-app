@@ -64,3 +64,13 @@ def test_カテゴリ更新_nameにnullは422(client, auth):
     response = client.patch(f"/categories/{category['id']}", json={"name": None}, headers=auth["headers"])
     assert response.status_code == 422
 
+def test_カテゴリ登録_nameが51文字は422(client, auth):
+    response = client.post("/categories", json={"name": "a" * 51}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_カテゴリ更新_nameが51文字は422(client, auth):
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
+    response = client.patch(f"/categories/{category['id']}", json={"name": "a" * 51}, headers=auth["headers"])
+    assert response.status_code == 422
+
+

@@ -87,3 +87,19 @@ def test_ユーザー更新_nameにnullは422(client, auth):
 def test_ユーザー更新_passwordにnullは422(client, auth):
     response = client.patch(f"/users/{auth['user_id']}", json={"name": "jiro", "email": "jiro@example.com", "password": None}, headers=auth["headers"])
     assert response.status_code == 422
+
+def test_ユーザー登録_emailの形式が不正は422(client):
+    response = client.post("/users", json={"name": "taro", "email": "abc", "password": "password123"})
+    assert response.status_code == 422
+
+def test_ユーザー登録_nameが21文字は422(client):
+    response = client.post("/users", json={"name": "a" * 21, "email": "taro@example.com", "password": "password123"})
+    assert response.status_code == 422
+
+def test_ユーザー登録_emailが31文字は422(client):
+    response = client.post("/users", json={"name": "taro", "email": "a" * 19 + "@example.com", "password": "password123"})
+    assert response.status_code == 422
+
+def test_ユーザー更新_nameが21文字は422(client, auth):
+    response = client.patch(f"/users/{auth['user_id']}", json={"name": "a" * 21}, headers=auth["headers"])
+    assert response.status_code == 422
