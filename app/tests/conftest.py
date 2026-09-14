@@ -22,10 +22,15 @@ def migrations():
     command.downgrade(alembic_cfg, "base")
 
 @pytest.fixture
-def client():
+def connection():
     connection = engine.connect()
     transaction = connection.begin()
+    yield connection
+    transaction.rollback()
+    connection.close()
 
+@pytest.fixture
+def client(connection):
     def override_get_db():
         db = TestingSessionLocal(bind=connection, join_transaction_mode="create_savepoint")
         try:
@@ -36,12 +41,9 @@ def client():
             raise
         finally:
             db.close()
-
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
-    transaction.rollback()
-    connection.close()
 
 # エンドポイントをテストするために、ログイン情報を返す
 @pytest.fixture
