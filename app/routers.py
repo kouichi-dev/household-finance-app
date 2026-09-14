@@ -25,8 +25,10 @@ def get_db():
         raise
     finally:
         db.close()
+        
+DB_SESSION = Depends(get_db, scope="function")
 
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def get_current_user(db: Session = DB_SESSION, token: str = Depends(oauth2_scheme)):
     return services.get_current_user(db, token)
 
 def verify_self(user_id: int, current_user = Depends(get_current_user)):
@@ -35,7 +37,7 @@ def verify_self(user_id: int, current_user = Depends(get_current_user)):
     return current_user
 
 @router.post("/users", response_model=UserResponse)
-def create_user_endpoint(user:UserCreate, db: Session = Depends(get_db)):
+def create_user_endpoint(user:UserCreate, db: Session = DB_SESSION):
     return services.create_user(db,user)
 
 @router.get("/users/me",response_model=UserResponse)
@@ -43,33 +45,33 @@ def get_current_user_endpoint(current_user = Depends(get_current_user)):
     return current_user
 
 @router.get("/users/{user_id}", response_model=UserResponse)
-def get_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(verify_self)):
+def get_user_endpoint(user_id: int, db: Session = DB_SESSION, current_user = Depends(verify_self)):
     return services.get_user(db,user_id)
 
 @router.patch("/users/{user_id}", response_model=UserResponse)
-def update_user_endpoint(user_id: int, user: UserUpdate, db: Session = Depends(get_db), current_user = Depends(verify_self)):
+def update_user_endpoint(user_id: int, user: UserUpdate, db: Session = DB_SESSION, current_user = Depends(verify_self)):
     return services.update_user(db,user,user_id)
 
 @router.delete("/users/{user_id}", status_code=204)
-def delete_user_endpoint(user_id: int, db: Session = Depends(get_db), current_user = Depends(verify_self)):
+def delete_user_endpoint(user_id: int, db: Session = DB_SESSION, current_user = Depends(verify_self)):
     services.delete_user(db,user_id)
 
 
 @router.post("/auth/login")
-def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = DB_SESSION):
     access_token,refresh_token = services.login_user(db, form_data.username, form_data.password)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/auth/refresh",response_model=AccessTokenResponse)
-def refresh_token_endpoint(token: RefreshTokenBody, db: Session = Depends(get_db)):
+def refresh_token_endpoint(token: RefreshTokenBody, db: Session = DB_SESSION):
     return services.refresh_access_token(db,token.refresh_token)
 
 @router.post("/auth/logout", status_code=204)
-def logout_endpoint(token: RefreshTokenBody, db: Session = Depends(get_db)):
+def logout_endpoint(token: RefreshTokenBody, db: Session = DB_SESSION):
     services.revoke_refresh_token(db,token.refresh_token)
 
 @router.post("/transactions",response_model=TransactionResponse)
-def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.create_transaction(db, current_user.id, transaction)
 
 @router.get("/transactions",response_model=TransactionListResponse)
@@ -81,7 +83,7 @@ def get_transaction_endpoint(
     category_id: int | Literal["none"] | None = Query(None),
     kind: TransactionKind | None = Query(None),
     current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = DB_SESSION
 ):
     db_transaction = services.get_transactions(db,current_user.id,page,limit,unit,on,category_id,kind)
     return db_transaction
@@ -93,37 +95,37 @@ def get_transactions_summary_endpoint(
     category_id: int | Literal["none"] | None = Query(None),
     kind: TransactionKind | None = Query(None),
     current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = DB_SESSION
 ):
     return services.get_transactions_summary(db,current_user.id,unit,on,category_id,kind)
 
 @router.patch("/transactions/{transaction_id}",response_model=TransactionResponse)
-def update_transaction_endpoint(transaction: TransactionUpdate, transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_transaction_endpoint(transaction: TransactionUpdate, transaction_id: int, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.update_transaction(db,current_user.id,transaction_id,transaction)
 
 @router.delete("/transactions/{transaction_id}", status_code=204)
-def delete_transaction_endpoint(transaction_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_transaction_endpoint(transaction_id: int, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     services.delete_transaction(db, current_user.id, transaction_id)
 
 
 #categories_endpoint
 
 @router.post("/categories",response_model=CategoryResponse)
-def create_category_endpoint(category: CategoryCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_category_endpoint(category: CategoryCreate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.create_category(db,current_user.id,category)
 
 @router.get("/categories",response_model=list[CategoryResponse])
-def get_category_endpoint(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_category_endpoint(current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.get_categories(db,current_user.id)
 
 
 @router.patch("/categories/{category_id}",response_model=CategoryResponse)
-def update_category_endpoint(category_id: int, category: CategoryUpdate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_category_endpoint(category_id: int, category: CategoryUpdate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.update_category(db,current_user.id,category_id,category)
 
 
 @router.delete("/categories/{category_id}", status_code=204)
-def delete_category_endpoint(category_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_category_endpoint(category_id: int, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     services.delete_category(db,current_user.id,category_id)
 
 
