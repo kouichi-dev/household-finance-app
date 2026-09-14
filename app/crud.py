@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category,RefreshTokens
 from schemas import UserCreate,TransactionCreate,CategoryCreate
 from exceptions import EmailAlreadyExistsError,CategoryAlreadyExistsError,TokenAlreadyExistsError
-from sqlalchemy import func,case,select,Date
+from sqlalchemy import func,case,select,Date,update
 from datetime import datetime,date
 
 # refresh_token
@@ -38,6 +38,14 @@ def revoke_refresh_token(db: Session, token):
     db.flush()
     db.refresh(db_refresh_token)
     return db_refresh_token
+
+def revoke_user_refresh_tokens(db: Session, user_id: int):
+    stmt = (
+        update(RefreshTokens)
+        .where(RefreshTokens.user_id == user_id, RefreshTokens.revoked == False)
+        .values(revoked=True)
+    )
+    db.execute(stmt)
 
 # user_crud
 

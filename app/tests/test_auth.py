@@ -39,3 +39,15 @@ def test_期限切れのリフレッシュトークンは401(client, auth, conne
     )
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert response.status_code == 401
+
+def test_リフレッシュトークンはパスワード変更後に401(client, auth):
+    updated = client.patch(f"/users/{auth['user_id']}", json={"password": "newpass123"}, headers=auth["headers"])
+    assert updated.status_code == 200
+    response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
+    assert response.status_code == 401
+
+def test_リフレッシュトークンは名前変更後も有効(client, auth):
+    updated = client.patch(f"/users/{auth['user_id']}", json={"name": "jiro"}, headers=auth["headers"])
+    assert updated.status_code == 200
+    response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
+    assert response.status_code == 200

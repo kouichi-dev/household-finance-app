@@ -42,8 +42,9 @@ def update_user(db, user, user_id):
         existing = crud.get_user_by_email(db, data["email"])
         if existing and existing.id != user_id:
             raise HTTPException(status_code=409, detail=_EMAIL_DUP)
-    if "password" in data:                               # password 送られた時だけハッシュ
+    if "password" in data:
         data["password"] = auth.hash_password(data["password"])
+        crud.revoke_user_refresh_tokens(db, user_id)
     updated = crud.update_user(db, data, user_id)
     if updated is None:
         raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
