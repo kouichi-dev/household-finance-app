@@ -181,9 +181,12 @@ def get_summary_by_date(db: Session, user_id: int, start: date, end: date, categ
     )
     return db.execute(stmt).all()
 
-def update_transaction(db: Session, user_id: int, transaction_id: int, data: dict):
+def get_transaction(db: Session, user_id: int, transaction_id: int):
     stmt = select(Transaction).where(Transaction.user_id == user_id, Transaction.id == transaction_id)
-    db_transaction = db.execute(stmt).scalar_one_or_none()
+    return db.execute(stmt).scalar_one_or_none()
+
+def update_transaction(db: Session, user_id: int, transaction_id: int, data: dict):
+    db_transaction = get_transaction(db, user_id, transaction_id)
     if not db_transaction:
         return None
     for key, value in data.items():
@@ -192,10 +195,8 @@ def update_transaction(db: Session, user_id: int, transaction_id: int, data: dic
     db.refresh(db_transaction)
     return db_transaction
 
-
 def delete_transaction(db: Session, user_id: int, transaction_id: int):
-    stmt = select(Transaction).where(Transaction.user_id == user_id, Transaction.id == transaction_id)
-    db_transaction = db.execute(stmt).scalar_one_or_none()
+    db_transaction = get_transaction(db, user_id, transaction_id)
     if not db_transaction:
         return None
     db.delete(db_transaction)
