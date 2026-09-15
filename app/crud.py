@@ -144,21 +144,22 @@ def count_transactions(db: Session, user_id: int, start: date, end: date, catego
     stmt = select(func.count()).select_from(Transaction).where(*filters)
     return db.execute(stmt).scalar_one()
 
+_INCOME_SUM = func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0)
+_EXPENSE_SUM = func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0)
+
 def get_summary_by_category(db: Session, user_id: int, start: date, end: date, category_id, kind):
     filters = build_filters(user_id, start, end, category_id, kind)
-    income = func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0)
-    expense = func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0)
     stmt = (
         select(
             Transaction.category_id,
             Category.name.label("category_name"),
-            income.label("income"),
-            expense.label("expense"),
+            _INCOME_SUM.label("income"),
+            _EXPENSE_SUM.label("expense"),
         )
         .outerjoin(Category, Transaction.category_id == Category.id)
         .where(*filters)
         .group_by(Transaction.category_id, Category.name)
-        .order_by((income + expense).desc())
+        .order_by((_INCOME_SUM + _EXPENSE_SUM).desc())
     )
     return db.execute(stmt).all()
 
@@ -168,13 +169,11 @@ def get_summary_by_date(db: Session, user_id: int, start: date, end: date, categ
         bucket = func.date_trunc('month', Transaction.transaction_date).cast(Date)
     else:
         bucket = Transaction.transaction_date
-    income = func.coalesce(func.sum(case((Transaction.kind == 'income', Transaction.amount), else_=0)), 0)
-    expense = func.coalesce(func.sum(case((Transaction.kind == 'expense', Transaction.amount), else_=0)), 0)
     stmt = (
         select(
             bucket.label("date"),
-            income.label("income"),
-            expense.label("expense"),
+            _INCOME_SUM.label("income"),
+            _EXPENSE_SUM.label("expense"),
         )
         .where(*filters)
         .group_by(bucket)
