@@ -2,6 +2,7 @@ import hashlib
 from sqlalchemy import update, select
 from models import RefreshTokens
 from datetime import datetime, timedelta, timezone
+from auth import create_access_token
 
 def test_リフレッシュトークン取得(client):
     client.post("/users", json={"name": "taro", "email": "taro@example.com", "password": "password123"})
@@ -57,3 +58,21 @@ def test_リフレッシュトークンはDBにハッシュで保存される(cl
     saved = connection.execute(select(RefreshTokens.token_hash)).scalar_one()
     assert saved != auth["refresh_token"]
     assert saved == hashlib.sha256(auth["refresh_token"].encode()).hexdigest()
+
+def test_不正なアクセストークンは401でWWW_Authenticateを返す(client):
+    response = client.get("/users/me", headers={"Authorization": "Bearer invalid"})
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+
+def test_subのないアクセストークンは401でWWW_Authenticateを返す(client):
+    token = create_access_token({})
+    response = client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+
+def test_削除済みユーザーのアクセストークンは401でWWW_Authenticateを返す(client, auth):
+    deleted = client.delete(f"/users/{auth['user_id']}", headers=auth["headers"])
+    assert deleted.status_code == 204
+    response = client.get("/users/me", headers=auth["headers"])
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"

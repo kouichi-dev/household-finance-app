@@ -37,10 +37,11 @@ def verify_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="無効なトークンです")
+            raise HTTPException(status_code=401, detail="無効なトークンです", headers={"WWW-Authenticate": "Bearer"})
         return user_id
     except InvalidTokenError:
-        raise HTTPException(status_code=401, detail="トークンが不正です")
+        raise HTTPException(status_code=401, detail="トークンが不正です", headers={"WWW-Authenticate": "Bearer"})
+
 
 def create_refresh_token(db, user_id: int):
     expire = datetime.now(timezone.utc) + timedelta(days=30)

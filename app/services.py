@@ -89,7 +89,7 @@ def get_current_user(db, token):
     user_id = auth.verify_token(token)
     db_user = crud.get_users(db, int(user_id))
     if db_user is None:
-        raise HTTPException(status_code=401, detail="ユーザーが存在しません")
+        raise HTTPException(status_code=401, detail="ユーザーが存在しません", headers={"WWW-Authenticate": "Bearer"})
     return db_user
 
 def delete_user(db, user_id):
