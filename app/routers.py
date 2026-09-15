@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from schemas import UserCreate,UserResponse,TransactionCreate,TransactionResponse,CategoryCreate,CategoryResponse,PeriodUnit,UserUpdate,TransactionUpdate,CategoryUpdate,RefreshTokenBody,AccessTokenResponse,TransactionKind,TransactionListResponse, TransactionSummaryResponse
 import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
-from fastapi import Depends
 from datetime import date
 from typing import Literal
 
