@@ -20,7 +20,6 @@ def data_save_refresh_token(db: Session, user_id: int, token_hash: str, expires_
     try:
         db.flush()
     except IntegrityError:
-        db.rollback()
         raise TokenAlreadyExistsError()
     db.refresh(db_refresh_tokens)
     return db_refresh_tokens
@@ -55,7 +54,6 @@ def create_user(db: Session, user: UserCreate):
     try:
         db.flush()
     except IntegrityError:
-        db.rollback()
         raise EmailAlreadyExistsError()
     db.refresh(db_user)
     return db_user
@@ -72,7 +70,6 @@ def update_user(db: Session, data: dict, user_id: int):
     try:
         db.flush()
     except IntegrityError:
-        db.rollback()
         raise EmailAlreadyExistsError()
     db.refresh(db_user)
     return db_user
@@ -214,7 +211,6 @@ def create_category(db: Session, user_id: int, category: CategoryCreate):
     try:
         db.flush()
     except IntegrityError:
-        db.rollback()
         raise CategoryAlreadyExistsError()
     db.refresh(db_category)
     return db_category
@@ -241,7 +237,6 @@ def update_category(db: Session, user_id: int, category_id: int, data: dict):
     try:
         db.flush()
     except IntegrityError:
-        db.rollback()
         raise CategoryAlreadyExistsError()
     db.refresh(db_category)
     return db_category
