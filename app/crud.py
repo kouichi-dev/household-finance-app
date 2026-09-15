@@ -227,8 +227,7 @@ def get_categories(db: Session, user_id: int):
     return db.execute(stmt).scalars().all()
 
 def update_category(db: Session, user_id: int, category_id: int, data: dict):
-    stmt = select(Category).where(Category.user_id==user_id, Category.id==category_id)
-    db_category = db.execute(stmt).scalar_one_or_none()
+    db_category = get_category(db, user_id, category_id)
     if not db_category:
         return None
     for key, value in data.items():
@@ -241,8 +240,7 @@ def update_category(db: Session, user_id: int, category_id: int, data: dict):
     return db_category
 
 def delete_category(db: Session, user_id: int, category_id: int):
-    stmt = select(Category).where(Category.user_id==user_id,Category.id==category_id)
-    db_category = db.execute(stmt).scalar_one_or_none()
+    db_category = get_category(db, user_id, category_id)
     if not db_category:
         return None
     db.delete(db_category)
