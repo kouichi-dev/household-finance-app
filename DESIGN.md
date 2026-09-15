@@ -117,30 +117,32 @@
 - name VARCHAR(20) NOT NULL
 - email VARCHAR(30) NOT NULL UNIQUE
 - password VARCHAR(100) NOT NULL
-- created_at TIMESTAMP NOT NULL
+- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 
 ### transactionsテーブル
 - id INTEGER PRIMARY KEY
-- user_id INTEGER FOREIGN KEY('users.id') NOT NULL
-- category_id INTEGER FOREIGN KEY('categories.id')
-- amount INTEGER NOT NULL
+- user_id INTEGER FOREIGN KEY('users.id') ON DELETE CASCADE NOT NULL
+- category_id INTEGER FOREIGN KEY('categories.id') ON DELETE SET NULL
+- amount INTEGER NOT NULL CHECK(amount >= 0)
 - description VARCHAR(50) NULLABLE
 - kind VARCHAR(10) NOT NULL CHECK(kind IN ('income', 'expense'))
 - transaction_date DATE NOT NULL
-- created_at TIMESTAMP NOT NULL
+- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+- INDEX (user_id, transaction_date)
 
 ### categoriesテーブル
 - id INTEGER PRIMARY KEY
-- user_id INTEGER FOREIGN KEY('users.id') NOT NULL
+- user_id INTEGER FOREIGN KEY('users.id') ON DELETE CASCADE NOT NULL
 - name VARCHAR(50) NOT NULL
+- UNIQUE(user_id, name)
 
 ### refresh_tokensテーブル
 - id INTEGER PRIMARY KEY
-- user_id INTEGER FOREIGN KEY('users.id') NOT NULL
+- user_id INTEGER FOREIGN KEY('users.id') ON DELETE CASCADE NOT NULL
 - token_hash VARCHAR(255) NOT NULL UNIQUE
-- expires_at TIMESTAMP NOT NULL
-- revoked BOOLEAN NOT NULL DEFAULT false
-- created_at TIMESTAMP NOT NULL
+- expires_at TIMESTAMPTZ NOT NULL
+- revoked BOOLEAN NOT NULL（DB に既定値はなく、作成時にアプリが false を入れる）
+- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 
 
 ## アーキテクチャ
