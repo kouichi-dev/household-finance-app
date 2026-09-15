@@ -39,6 +39,7 @@ docker compose up --build
 
 `db` → `migrate`（`alembic upgrade head`）→ `app` の順に起動します。
 起動後、http://localhost:8000/docs で Swagger UI が開きます。
+この Docker 構成は開発用です。`app` フォルダをコンテナにマウントし、`--reload` でコードの変更を自動で反映します。
 
 `db/init.sql` はテスト用DB（`household_test`）を作成しますが、
 これはDBのデータボリュームが空のときにのみ実行されます。
