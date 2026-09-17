@@ -45,6 +45,10 @@ def test_不正なpageは422になる(client, auth):
     response = client.get("/transactions?page=0", headers=auth["headers"])
     assert response.status_code == 422
 
+def test_page上限超過は422になる(client, auth):
+    response = client.get("/transactions", params={"page": 10001}, headers=auth["headers"])
+    assert response.status_code == 422
+
 def test_limit上限超過は422になる(client, auth):
     response = client.get("/transactions?limit=101", headers=auth["headers"])
     assert response.status_code == 422

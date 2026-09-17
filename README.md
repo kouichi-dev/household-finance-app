@@ -92,7 +92,7 @@ docker compose up --build
 | category_id | カテゴリID / `none` | `none` は未分類のみ。省略時は絞らない |
 | kind | `income` / `expense` | 省略時は絞らない |
 
-一覧はこれに加えて `page`（省略時 1）と `limit`（省略時 20、最大 100）を受けます。
+一覧はこれに加えて `page`（省略時 1、最大 10000）と `limit`（省略時 20、最大 100）を受けます。
 
 集計のレスポンス例（`unit=monthly&on=2026-08-15`）:
 

@@ -77,7 +77,7 @@ def create_transaction_endpoint(transaction: TransactionCreate, current_user = D
 
 @router.get("/transactions",response_model=TransactionListResponse)
 def get_transaction_endpoint(
-    page: int = Query(1, ge=1),
+    page: int = Query(1, ge=1, le=10000),
     limit: int = Query(20, ge=1, le=100),
     unit: PeriodUnit = Query(PeriodUnit.monthly),
     on: date | None = Query(None, ge=ON_MIN, le=ON_MAX),
