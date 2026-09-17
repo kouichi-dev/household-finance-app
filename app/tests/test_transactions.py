@@ -53,6 +53,14 @@ def test_limit下限未満は422になる(client, auth):
     response = client.get("/transactions?limit=0", headers=auth["headers"])
     assert response.status_code == 422
 
+def test_onが下限未満は422になる(client, auth):
+    response = client.get("/transactions", params={"on": "1999-12-31"}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_onが上限超過は422になる(client, auth):
+    response = client.get("/transactions/summary", params={"on": "2101-01-01"}, headers=auth["headers"])
+    assert response.status_code == 422
+
 def test_他人のカテゴリは紐づけできない(client, auth):
     # 別ユーザーB を作ってカテゴリを持たせる
     client.post("/users", json={"name": "jiro", "email": "jiro@example.com", "password": "password123"})

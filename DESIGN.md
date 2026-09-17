@@ -51,7 +51,7 @@
 - GET /transactions/summary  収支集計取得
     - クエリパラメータ:
       - unit: monthly | yearly（省略時 monthly）
-      - on: 日付（例: 2026-08-15）。その日を含む期間を集計する。省略時は JST の今日
+      - on: 日付（例: 2026-08-15）。その日を含む期間を集計する。省略時は JST の今日。2000-01-01〜2100-12-31 の範囲外は 422
       - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
       - kind: income | expense。省略時は絞らない
     - 未分類は文字列 `none` を送る。`null` や空文字、0 ではない
@@ -78,7 +78,7 @@
 - GET     /transactions?page=1&limit=20   収支一覧取得
     - クエリパラメータ:
       - unit: monthly | yearly（省略時 monthly）
-      - on: 日付。その日を含む期間の明細を返す。省略時は JST の今日
+      - on: 日付。その日を含む期間の明細を返す。省略時は JST の今日。2000-01-01〜2100-12-31 の範囲外は 422
       - category_id: カテゴリID | none（未分類のみ）。省略時は絞らない
       - kind: income | expense。省略時は絞らない
     - 並び順: transaction_date 降順、同日は id 降順（新しい順）

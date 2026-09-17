@@ -26,6 +26,8 @@ def get_db():
         db.close()
         
 DB_SESSION = Depends(get_db, scope="function")
+ON_MIN = date(2000, 1, 1)
+ON_MAX = date(2100, 12, 31)
 
 def get_current_user(db: Session = DB_SESSION, token: str = Depends(oauth2_scheme)):
     return services.get_current_user(db, token)
@@ -78,7 +80,7 @@ def get_transaction_endpoint(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     unit: PeriodUnit = Query(PeriodUnit.monthly),
-    on: date | None = Query(None),
+    on: date | None = Query(None, ge=ON_MIN, le=ON_MAX),
     category_id: int | Literal["none"] | None = Query(None),
     kind: TransactionKind | None = Query(None),
     current_user = Depends(get_current_user),
@@ -89,7 +91,7 @@ def get_transaction_endpoint(
 
 @router.get("/transactions/summary", response_model=TransactionSummaryResponse)
 def get_transactions_summary_endpoint(
-    on: date | None = Query(None),
+    on: date | None = Query(None, ge=ON_MIN, le=ON_MAX),
     unit: PeriodUnit = Query(PeriodUnit.monthly),
     category_id: int | Literal["none"] | None = Query(None),
     kind: TransactionKind | None = Query(None),
