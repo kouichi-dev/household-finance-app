@@ -2,6 +2,8 @@
 
 services:
   migrate:
+    volumes:
+      - ./app:/app
     build: .
     command: alembic upgrade head
     env_file:
@@ -13,7 +15,6 @@ services:
   app:
     volumes:
       - ./app:/app
-  # buildは現在のdirのDockerfileを使ってビルドする
     build:  .
     ports:
       - "8000:8000"
@@ -26,8 +27,8 @@ services:
   db:
     image: postgres:18
     volumes:
-      - pgdata:/var/lib/postgresql   #永続化させる
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  #ホストのSQLをコンテナに見せる
+      - pgdata:/var/lib/postgresql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
