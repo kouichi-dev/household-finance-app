@@ -1,5 +1,3 @@
-
-
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from models import User,Transaction,Category,RefreshTokens
@@ -8,8 +6,7 @@ from exceptions import EmailAlreadyExistsError,CategoryAlreadyExistsError,TokenA
 from sqlalchemy import func,case,select,Date,update
 from datetime import datetime,date
 
-# refresh_token
-
+# ---- refresh tokens ----
 def data_save_refresh_token(db: Session, user_id: int, token_hash: str, expires_at: datetime):
     db_refresh_tokens = RefreshTokens(
         user_id=user_id,
@@ -46,8 +43,7 @@ def revoke_user_refresh_tokens(db: Session, user_id: int):
     )
     db.execute(stmt)
 
-# user_crud
-
+# ---- users ----
 def create_user(db: Session, user: UserCreate):
     db_user = User(name=user.name,email=user.email,password=user.password)
     db.add(db_user)
@@ -74,25 +70,19 @@ def update_user(db: Session, data: dict, user_id: int):
     db.refresh(db_user)
     return db_user
 
-
 def delete_user(db: Session, user_id: int):
     db_user = db.get(User, user_id)
     if not db_user:
         return None
     db.delete(db_user)
     db.flush()
-
     return db_user
-
-
 
 def get_user_by_email(db: Session,email: str):
     stmt = select(User).where(User.email == email)
     return db.execute(stmt).scalar_one_or_none()
 
-# transaction_crud
-
-
+# ---- transactions ----
 def create_transaction(db: Session, user_id: int, transaction: TransactionCreate):
     db_transaction = Transaction(
         user_id=user_id,
@@ -112,10 +102,8 @@ def build_filters(user_id: int, start: date | None, end: date | None, category_i
         filters.append(Transaction.category_id.is_(None))
     elif category_id is not None:
         filters.append(Transaction.category_id == category_id)
-
     if kind is not None:
         filters.append(Transaction.kind == kind)
-
     if start is not None:
         filters.append(Transaction.transaction_date >= start)
         filters.append(Transaction.transaction_date <= end)
@@ -203,8 +191,7 @@ def delete_transaction(db: Session, user_id: int, transaction_id: int):
     db.flush()
     return db_transaction
 
-# category_crud
-
+# ---- categories ----
 def create_category(db: Session, user_id: int, category: CategoryCreate):
     db_category = Category(user_id=user_id,name=category.name)
     db.add(db_category)
@@ -247,5 +234,3 @@ def delete_category(db: Session, user_id: int, category_id: int):
     db.delete(db_category)
     db.flush()
     return db_category
-
-

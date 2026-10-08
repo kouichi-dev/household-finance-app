@@ -1,5 +1,3 @@
-
-
 import crud
 import auth
 from fastapi import HTTPException
@@ -8,10 +6,10 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
 
-
 _EMAIL_DUP = "このメールアドレスは既に使われています"
 _PRESET_CATEGORIES = ("食費", "日用品", "交通費", "住居", "娯楽", "給与")
 
+# ---- auth ----
 def refresh_access_token(db,refresh_token):
     refresh_token = auth.verify_refresh_token(db,refresh_token)
     access_token = auth.create_access_token({"sub": str(refresh_token.user_id)})
@@ -23,7 +21,21 @@ def revoke_refresh_token(db,refresh_token):
         raise HTTPException(status_code=404, detail="リフレッシュトークンが存在しません")
     return db_refresh_token
 
-    
+def login_user(db, username, password):
+    db_user = crud.get_user_by_email(db, username)
+    if not db_user or not auth.verify_password(password, db_user.password):
+        raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
+    access_token = auth.create_access_token({"sub": str(db_user.id)})
+    refresh_token = auth.create_refresh_token(db,db_user.id)
+    return access_token,refresh_token
+
+def get_current_user(db, token):
+    user_id = auth.verify_token(token)
+    db_user = crud.get_users(db, int(user_id))
+    if db_user is None:
+        raise HTTPException(status_code=401, detail="ユーザーが存在しません", headers={"WWW-Authenticate": "Bearer"})
+    return db_user
+
 # ---- users ----
 def create_user(db,user):
     if crud.get_user_by_email(db, user.email):
@@ -34,6 +46,12 @@ def create_user(db,user):
     except EmailAlreadyExistsError:
         raise HTTPException(status_code=409, detail= _EMAIL_DUP)
     crud.create_preset_categories(db, db_user.id, _PRESET_CATEGORIES)
+    return db_user
+
+def get_user(db, user_id):
+    db_user = crud.get_users(db, user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
     return db_user
 
 def update_user(db, user, user_id):
@@ -53,16 +71,11 @@ def update_user(db, user, user_id):
         raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
     return updated
 
+def delete_user(db, user_id):
+    if crud.delete_user(db, user_id) is None:
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
 
-
-def login_user(db, username, password):
-    db_user = crud.get_user_by_email(db, username)
-    if not db_user or not auth.verify_password(password, db_user.password):
-        raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
-    access_token = auth.create_access_token({"sub": str(db_user.id)})
-    refresh_token = auth.create_refresh_token(db,db_user.id)
-    return access_token,refresh_token
-
+# ---- transactions ----
 def resolve_period(unit, on):
     if unit == 'yearly':
         start = date(on.year, 1, 1)
@@ -81,25 +94,6 @@ def resolve_period_info(unit, on):
     prev_on = resolve_period(unit, start - timedelta(days=1))[0]
     next_on = resolve_period(unit, end + timedelta(days=1))[0]
     return start, end, period, prev_on, next_on
-
-def get_user(db, user_id):
-    db_user = crud.get_users(db, user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
-    return db_user
-
-def get_current_user(db, token):
-    user_id = auth.verify_token(token)
-    db_user = crud.get_users(db, int(user_id))
-    if db_user is None:
-        raise HTTPException(status_code=401, detail="ユーザーが存在しません", headers={"WWW-Authenticate": "Bearer"})
-    return db_user
-
-def delete_user(db, user_id):
-    if crud.delete_user(db, user_id) is None:
-        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
-
-# ---- transactions ----
 
 #自分のカテゴリが存在するかをチェック、カテゴリ未指定の場合はそのまま通す
 def _ensure_category_owned(db, user_id, category_id):
@@ -162,7 +156,6 @@ def create_category(db, user_id, category):
         return crud.create_category(db, user_id, category)
     except CategoryAlreadyExistsError:
         raise HTTPException(status_code=409, detail="このカテゴリ名は既に存在します")
-
 
 def get_categories(db, user_id):
     return crud.get_categories(db, user_id)

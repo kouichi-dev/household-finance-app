@@ -60,16 +60,6 @@ class PeriodResponse(BaseModel):
     start: date
     end: date
 
-class CategoryCreate(BaseModel):
-    name: str = Field(max_length=50)
-
-class CategoryUpdate(BaseModel):
-    name: str = Field(default=None, max_length=50)
-
-class CategoryResponse(BaseModel):
-    id: int
-    name: str
-
 class TransactionListResponse(BaseModel):
     period: PeriodResponse
     prev_on: date
@@ -99,3 +89,13 @@ class TransactionSummaryResponse(BaseModel):
     balance: int
     by_category: list[CategorySummaryResponse]
     by_date: list[DateSummaryResponse]
+
+class CategoryCreate(BaseModel):
+    name: str = Field(max_length=50)
+
+class CategoryUpdate(BaseModel):
+    name: str = Field(default=None, max_length=50)
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str

@@ -1,5 +1,3 @@
-
-
 from fastapi import APIRouter,Depends,HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
@@ -8,7 +6,6 @@ import services
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
 from datetime import date
 from typing import Literal
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -24,7 +21,7 @@ def get_db():
         raise
     finally:
         db.close()
-        
+
 DB_SESSION = Depends(get_db, scope="function")
 ON_MIN = date(2000, 1, 1)
 ON_MAX = date(2100, 12, 31)
@@ -37,6 +34,7 @@ def verify_self(user_id: int, current_user = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="権限がありません")
     return current_user
 
+# ---- users ----
 @router.post("/users", response_model=UserResponse)
 def create_user_endpoint(user:UserCreate, db: Session = DB_SESSION):
     return services.create_user(db,user)
@@ -57,7 +55,7 @@ def update_user_endpoint(user_id: int, user: UserUpdate, db: Session = DB_SESSIO
 def delete_user_endpoint(user_id: int, db: Session = DB_SESSION, current_user = Depends(verify_self)):
     services.delete_user(db,user_id)
 
-
+# ---- auth ----
 @router.post("/auth/login")
 def login_user_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = DB_SESSION):
     access_token,refresh_token = services.login_user(db, form_data.username, form_data.password)
@@ -71,6 +69,7 @@ def refresh_token_endpoint(token: RefreshTokenBody, db: Session = DB_SESSION):
 def logout_endpoint(token: RefreshTokenBody, db: Session = DB_SESSION):
     services.revoke_refresh_token(db,token.refresh_token)
 
+# ---- transactions ----
 @router.post("/transactions",response_model=TransactionResponse)
 def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.create_transaction(db, current_user.id, transaction)
@@ -108,9 +107,7 @@ def update_transaction_endpoint(transaction: TransactionUpdate, transaction_id: 
 def delete_transaction_endpoint(transaction_id: int, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     services.delete_transaction(db, current_user.id, transaction_id)
 
-
-#categories_endpoint
-
+# ---- categories ----
 @router.post("/categories",response_model=CategoryResponse)
 def create_category_endpoint(category: CategoryCreate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.create_category(db,current_user.id,category)
@@ -119,15 +116,10 @@ def create_category_endpoint(category: CategoryCreate, current_user = Depends(ge
 def get_category_endpoint(current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.get_categories(db,current_user.id)
 
-
 @router.patch("/categories/{category_id}",response_model=CategoryResponse)
 def update_category_endpoint(category_id: int, category: CategoryUpdate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.update_category(db,current_user.id,category_id,category)
 
-
 @router.delete("/categories/{category_id}", status_code=204)
 def delete_category_endpoint(category_id: int, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     services.delete_category(db,current_user.id,category_id)
-
-
-
