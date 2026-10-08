@@ -1,7 +1,6 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-
 def test_収支登録(client, auth):
     response = client.post("/transactions", json={
         "amount": 1000,
@@ -12,80 +11,11 @@ def test_収支登録(client, auth):
     assert response.status_code == 200
     assert response.json()["amount"] == 1000
 
-def test_収支一覧取得(client, auth):
-    client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
-    response = client.get("/transactions?page=1&limit=20&on=2026-06-15", headers=auth["headers"])
+def test_収支登録_日付省略時に今日の日付が入る(client, auth):
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date().isoformat()
+    response = client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
     assert response.status_code == 200
-    assert len(response.json()["items"]) > 0
-
-
-def test_認証なしアクセスは401(client):
-    response = client.get("/transactions")
-    assert response.status_code == 401
-
-def test_収支更新(client, auth):
-    created = client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
-    response = client.patch(f"/transactions/{created['id']}", json={"amount": 2000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
-    assert response.status_code == 200
-    assert response.json()["amount"] == 2000
-
-def test_収支削除(client, auth):
-    created = client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
-    response = client.delete(f"/transactions/{created['id']}", headers=auth["headers"])
-    assert response.status_code == 204
-
-def test_収支集計(client, auth):
-    client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
-    response = client.get("/transactions/summary", 
-                        params={"unit": "monthly", "on": "2026-06-15"}, 
-                        headers=auth["headers"])
-    assert response.status_code == 200
-
-def test_不正なpageは422になる(client, auth):
-    response = client.get("/transactions?page=0", headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_page上限超過は422になる(client, auth):
-    response = client.get("/transactions", params={"page": 10001}, headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_limit上限超過は422になる(client, auth):
-    response = client.get("/transactions?limit=101", headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_limit下限未満は422になる(client, auth):
-    response = client.get("/transactions?limit=0", headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_onが下限未満は422になる(client, auth):
-    response = client.get("/transactions", params={"on": "1999-12-31"}, headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_onが上限超過は422になる(client, auth):
-    response = client.get("/transactions/summary", params={"on": "2101-01-01"}, headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_他人のカテゴリは紐づけできない(client, auth):
-    # 別ユーザーB を作ってカテゴリを持たせる
-    client.post("/users", json={"name": "jiro", "email": "jiro@example.com", "password": "password123"})
-    login_b = client.post("/auth/login", data={"username": "jiro@example.com", "password": "password123"}).json()
-    headers_b = {"Authorization": f"Bearer {login_b['access_token']}"}
-    category_b = client.post("/categories", json={"name": "通信費"}, headers=headers_b).json()
-
-    # A（auth）が B のカテゴリidで収支作成 → 404
-    response = client.post("/transactions", json={
-        "amount": 1000, "kind": "expense", "transaction_date": "2026-06-15",
-        "category_id": category_b["id"]
-    }, headers=auth["headers"])
-    assert response.status_code == 404
-
-# 存在しないカテゴリidは弾く（FK違反500を防ぐ）
-def test_存在しないカテゴリは紐づけできない(client, auth):
-    response = client.post("/transactions", json={
-        "amount": 1000, "kind": "expense", "transaction_date": "2026-06-15",
-        "category_id": 9999
-    }, headers=auth["headers"])
-    assert response.status_code == 404
+    assert response.json()["transaction_date"] == today
 
 # 自分のカテゴリなら正常に紐づく（正規フローが壊れてない確認）
 def test_自分のカテゴリは紐づけできる(client, auth):
@@ -97,40 +27,53 @@ def test_自分のカテゴリは紐づけできる(client, auth):
     assert response.status_code == 200
     assert response.json()["category_id"] == category["id"]
 
-# サイレントバグの回帰テスト：transaction_date が実際に更新される
-def test_収支更新_日付が反映される(client, auth):
-    created = client.post("/transactions", json={"amount": 1000, "kind": "expense",
-        "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
-    r = client.patch(f"/transactions/{created['id']}",
-        json={"transaction_date": "2026-07-20"}, headers=auth["headers"])
-    assert r.status_code == 200
-    assert r.json()["transaction_date"] == "2026-07-20"
-
-# 部分更新：amount だけ送る → description は不変
-def test_収支部分更新_amountだけ(client, auth):
-    created = client.post("/transactions", json={"amount": 1000, "kind": "expense",
-        "transaction_date": "2026-06-15", "description": "ランチ"}, headers=auth["headers"]).json()
-    r = client.patch(f"/transactions/{created['id']}", json={"amount": 2000}, headers=auth["headers"])
-    assert r.status_code == 200
-    assert r.json()["amount"] == 2000
-    assert r.json()["description"] == "ランチ"   # 送ってないので不変
-
-def test_収支集計_取引ゼロの期間は全て0(client, auth):
-    r = client.get("/transactions/summary",
-                params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
-    assert r.status_code == 200
-    assert r.json() == {
-        "period": {"unit": "monthly", "start": "2099-01-01", "end": "2099-01-31"},
-        "prev_on": "2098-12-01",
-        "next_on": "2099-02-01",
-        "income": 0, "expense": 0, "balance": 0, "by_category": [], "by_date": []
-    }
-
 def test_負のamountは422(client, auth):
     r = client.post("/transactions",
                     json={"amount": -500, "kind": "expense", "transaction_date": "2026-07-01"},
                     headers=auth["headers"])
     assert r.status_code == 422
+
+def test_収支登録_descriptionが51文字は422(client, auth):
+    response = client.post("/transactions", json={"amount": 1000, "kind": "expense", "description": "a" * 51}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_収支登録_amountがINTEGERの上限を超えると422(client, auth):
+    response = client.post("/transactions", json={"amount": 2147483648, "kind": "expense"}, headers=auth["headers"])
+    assert response.status_code == 422
+
+# 存在しないカテゴリidは弾く（FK違反500を防ぐ）
+def test_存在しないカテゴリは紐づけできない(client, auth):
+    response = client.post("/transactions", json={
+        "amount": 1000, "kind": "expense", "transaction_date": "2026-06-15",
+        "category_id": 9999
+    }, headers=auth["headers"])
+    assert response.status_code == 404
+
+def test_他人のカテゴリは紐づけできない(client, auth):
+    client.post("/users", json={"name": "jiro", "email": "jiro@example.com", "password": "password123"})
+    login_b = client.post("/auth/login", data={"username": "jiro@example.com", "password": "password123"}).json()
+    headers_b = {"Authorization": f"Bearer {login_b['access_token']}"}
+    category_b = client.post("/categories", json={"name": "通信費"}, headers=headers_b).json()
+
+    response = client.post("/transactions", json={
+        "amount": 1000, "kind": "expense", "transaction_date": "2026-06-15",
+        "category_id": category_b["id"]
+    }, headers=auth["headers"])
+    assert response.status_code == 404
+
+def test_収支一覧取得(client, auth):
+    client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
+    response = client.get("/transactions?page=1&limit=20&on=2026-06-15", headers=auth["headers"])
+    assert response.status_code == 200
+    assert len(response.json()["items"]) > 0
+
+def test_収支一覧_on省略時は今日を含む月を返す(client, auth):
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
+    response = client.get("/transactions", headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
+    assert len(response.json()["items"]) == 1
 
 def test_収支一覧_指定した月以外は返らない(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
@@ -140,18 +83,13 @@ def test_収支一覧_指定した月以外は返らない(client, auth):
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["transaction_date"] == "2026-08-10"
 
-def test_収支登録_日付省略時に今日の日付が入る(client, auth):
-    today = datetime.now(ZoneInfo("Asia/Tokyo")).date().isoformat()
-    response = client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
+def test_収支一覧_指定した種別だけ返る(client, auth):
+    client.post("/transactions", json={"amount": 5000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "kind": "income"}, headers=auth["headers"])
     assert response.status_code == 200
-    assert response.json()["transaction_date"] == today
-
-def test_収支集計_年をまたぐデータは含まれない(client, auth):
-    client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-03-10"}, headers=auth["headers"])
-    client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2025-12-31"}, headers=auth["headers"])
-    response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-07-01"}, headers=auth["headers"])
-    assert response.status_code == 200
-    assert response.json()["expense"] == 1000
+    assert len(response.json()["items"]) == 1
+    assert response.json()["items"][0]["kind"] == "income"
 
 def test_収支一覧_未分類だけ返る(client, auth):
     category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
@@ -162,21 +100,15 @@ def test_収支一覧_未分類だけ返る(client, auth):
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["category_id"] is None
 
-def test_収支集計_未分類だけ集計される(client, auth):
+def test_収支一覧_カテゴリ名を取得(client, auth):
     category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
-    client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
-    client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
-    response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 1000, "kind": "income", "transaction_date": "2026-08-20", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 3050, "kind": "income", "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-01"}, headers=auth["headers"])
     assert response.status_code == 200
-    assert response.json()["expense"] == 5000
-
-def test_収支一覧_指定した種別だけ返る(client, auth):
-    client.post("/transactions", json={"amount": 5000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
-    client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-08-15"}, headers=auth["headers"])
-    response = client.get("/transactions", params={"unit": "yearly", "on": "2026-08-01", "kind": "income"}, headers=auth["headers"])
-    assert response.status_code == 200
-    assert len(response.json()["items"]) == 1
-    assert response.json()["items"][0]["kind"] == "income"
+    assert len(response.json()["items"]) == 2
+    assert response.json()["items"][0]["category_name"] == "通信費"
+    assert response.json()["items"][1]["category_name"] is None
 
 def test_収支一覧_total_countはlimitを超えた全件数を返す(client, auth):
     client.post("/transactions", json={"amount": 2000, "kind": "income", "transaction_date": "2026-08-31"}, headers=auth["headers"])
@@ -194,15 +126,66 @@ def test_収支一覧_年をまたいでも前後の期間が返る(client, auth
     assert response.json()["prev_on"] == "2025-12-01"
     assert response.json()["next_on"] == "2026-02-01"
 
-def test_収支一覧_カテゴリ名を取得(client, auth):
-    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
-    client.post("/transactions", json={"amount": 1000, "kind": "income", "transaction_date": "2026-08-20", "category_id": category["id"]}, headers=auth["headers"])
-    client.post("/transactions", json={"amount": 3050, "kind": "income", "transaction_date": "2026-08-10"}, headers=auth["headers"])
-    response = client.get("/transactions", params={"unit": "monthly", "on": "2026-08-01"}, headers=auth["headers"])
+def test_不正なpageは422になる(client, auth):
+    response = client.get("/transactions?page=0", headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_page上限超過は422になる(client, auth):
+    response = client.get("/transactions", params={"page": 10001}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_limit下限未満は422になる(client, auth):
+    response = client.get("/transactions?limit=0", headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_limit上限超過は422になる(client, auth):
+    response = client.get("/transactions?limit=101", headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_onが下限未満は422になる(client, auth):
+    response = client.get("/transactions", params={"on": "1999-12-31"}, headers=auth["headers"])
+    assert response.status_code == 422
+
+def test_収支集計(client, auth):
+    client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", 
+                        params={"unit": "monthly", "on": "2026-06-15"}, 
+                        headers=auth["headers"])
     assert response.status_code == 200
-    assert len(response.json()["items"]) == 2
-    assert response.json()["items"][0]["category_name"] == "通信費"
-    assert response.json()["items"][1]["category_name"] is None
+
+def test_収支集計_on省略時は今日を含む月を返す(client, auth):
+    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
+    assert response.json()["expense"] == 1000
+
+def test_収支集計_取引ゼロの期間は全て0(client, auth):
+    r = client.get("/transactions/summary",
+                params={"unit": "monthly", "on": "2099-01-15"}, headers=auth["headers"])
+    assert r.status_code == 200
+    assert r.json() == {
+        "period": {"unit": "monthly", "start": "2099-01-01", "end": "2099-01-31"},
+        "prev_on": "2098-12-01",
+        "next_on": "2099-02-01",
+        "income": 0, "expense": 0, "balance": 0, "by_category": [], "by_date": []
+    }
+
+def test_収支集計_年をまたぐデータは含まれない(client, auth):
+    client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-03-10"}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2025-12-31"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-07-01"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["expense"] == 1000
+
+def test_収支集計_未分類だけ集計される(client, auth):
+    category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
+    client.post("/transactions", json={"amount": 3000, "kind": "expense", "transaction_date": "2026-08-31", "category_id": category["id"]}, headers=auth["headers"])
+    client.post("/transactions", json={"amount": 5000, "kind": "expense", "transaction_date": "2026-08-10"}, headers=auth["headers"])
+    response = client.get("/transactions/summary", params={"unit": "yearly", "on": "2026-08-01", "category_id": "none"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["expense"] == 5000
 
 def test_収支集計_カテゴリ別内訳が金額順で返る(client, auth):
     category = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"]).json()
@@ -265,26 +248,32 @@ def test_収支集計_年をまたいでも前後の期間が返る(client, auth
     assert response.json()["prev_on"] == "2025-12-01"
     assert response.json()["next_on"] == "2026-02-01"
 
-def test_収支一覧_on省略時は今日を含む月を返す(client, auth):
-    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
-    client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
-    response = client.get("/transactions", headers=auth["headers"])
-    assert response.status_code == 200
-    assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
-    assert len(response.json()["items"]) == 1
-
-def test_収支集計_on省略時は今日を含む月を返す(client, auth):
-    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
-    client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
-    response = client.get("/transactions/summary", headers=auth["headers"])
-    assert response.status_code == 200
-    assert response.json()["period"]["start"] == today.replace(day=1).isoformat()
-    assert response.json()["expense"] == 1000
-
-def test_収支更新_amountにnullは422(client, auth):
-    created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
-    response = client.patch(f"/transactions/{created['id']}", json={"amount": None}, headers=auth["headers"])
+def test_onが上限超過は422になる(client, auth):
+    response = client.get("/transactions/summary", params={"on": "2101-01-01"}, headers=auth["headers"])
     assert response.status_code == 422
+
+def test_収支更新(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    response = client.patch(f"/transactions/{created['id']}", json={"amount": 2000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
+    assert response.status_code == 200
+    assert response.json()["amount"] == 2000
+
+def test_収支部分更新_amountだけ(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense",
+        "transaction_date": "2026-06-15", "description": "ランチ"}, headers=auth["headers"]).json()
+    r = client.patch(f"/transactions/{created['id']}", json={"amount": 2000}, headers=auth["headers"])
+    assert r.status_code == 200
+    assert r.json()["amount"] == 2000
+    assert r.json()["description"] == "ランチ"
+
+# サイレントバグの回帰テスト：transaction_date が実際に更新される
+def test_収支更新_日付が反映される(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense",
+        "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    r = client.patch(f"/transactions/{created['id']}",
+        json={"transaction_date": "2026-07-20"}, headers=auth["headers"])
+    assert r.status_code == 200
+    assert r.json()["transaction_date"] == "2026-07-20"
 
 def test_収支更新_descriptionはnullで消せる(client, auth):
     created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15", "description": "スーパー"}, headers=auth["headers"]).json()
@@ -292,12 +281,9 @@ def test_収支更新_descriptionはnullで消せる(client, auth):
     assert response.status_code == 200
     assert response.json()["description"] is None
 
-def test_収支登録_descriptionが51文字は422(client, auth):
-    response = client.post("/transactions", json={"amount": 1000, "kind": "expense", "description": "a" * 51}, headers=auth["headers"])
-    assert response.status_code == 422
-
-def test_収支登録_amountがINTEGERの上限を超えると422(client, auth):
-    response = client.post("/transactions", json={"amount": 2147483648, "kind": "expense"}, headers=auth["headers"])
+def test_収支更新_amountにnullは422(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense", "transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    response = client.patch(f"/transactions/{created['id']}", json={"amount": None}, headers=auth["headers"])
     assert response.status_code == 422
 
 def test_収支更新_descriptionが51文字は422(client, auth):
@@ -305,4 +291,11 @@ def test_収支更新_descriptionが51文字は422(client, auth):
     response = client.patch(f"/transactions/{created['id']}", json={"description": "a" * 51}, headers=auth["headers"])
     assert response.status_code == 422
 
+def test_収支削除(client, auth):
+    created = client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"]).json()
+    response = client.delete(f"/transactions/{created['id']}", headers=auth["headers"])
+    assert response.status_code == 204
 
+def test_認証なしアクセスは401(client):
+    response = client.get("/transactions")
+    assert response.status_code == 401

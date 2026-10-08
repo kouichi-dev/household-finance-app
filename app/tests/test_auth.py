@@ -4,6 +4,12 @@ from models import RefreshTokens
 from datetime import datetime, timedelta, timezone
 from auth import create_access_token
 
+def test_ログイン(client):
+    client.post("/users", json={"name": "taro", "email": "taro@example.com", "password": "password123"})
+    response = client.post("/auth/login", data={"username": "taro@example.com", "password": "password123"})
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
 def test_リフレッシュトークン取得(client):
     client.post("/users", json={"name": "taro", "email": "taro@example.com", "password": "password123"})
     response = client.post("/auth/login", data={"username": "taro@example.com", "password": "password123"})
@@ -11,6 +17,23 @@ def test_リフレッシュトークン取得(client):
     assert response.status_code == 200
     assert "refresh_token" in body
     assert body["refresh_token"]
+
+def test_リフレッシュトークンはDBにハッシュで保存される(client, auth, connection):
+    saved = connection.execute(select(RefreshTokens.token_hash)).scalar_one()
+    assert saved != auth["refresh_token"]
+    assert saved == hashlib.sha256(auth["refresh_token"].encode()).hexdigest()
+
+def test_存在しないユーザーのログインは401(client):
+    response = client.post("/auth/login", data={"username": "nobody@example.com", "password": "x"})
+    assert response.status_code == 401
+
+def test_ログイン失敗_存在有無でメッセージが変わらない(client):
+    # 存在有無でメッセージを変えると列挙攻撃を許すため、同一であることを保証する
+    client.post("/users", json={"name": "taro", "email": "taro@example.com", "password": "password123"})
+    r1 = client.post("/auth/login", data={"username": "nobody@example.com", "password": "x"})
+    r2 = client.post("/auth/login", data={"username": "taro@example.com", "password": "wrong"})
+    assert r1.status_code == r2.status_code == 401
+    assert r1.json()["detail"] == r2.json()["detail"]
 
 def test_リフレッシュ後のアクセストークンが有効(client,auth):
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
@@ -23,11 +46,11 @@ def test_リフレッシュ後のアクセストークンが有効(client,auth):
     me = client.get("/users/me", headers={"Authorization": f"Bearer {new_token}"})
     assert me.status_code == 200
 
-def test_リフレッシュトークンはログアウト後に401(client, auth):
-    logout = client.post("/auth/logout", json={"refresh_token": auth["refresh_token"]})
-    assert logout.status_code == 204
+def test_リフレッシュトークンは名前変更後も有効(client, auth):
+    updated = client.patch(f"/users/{auth['user_id']}", json={"name": "jiro"}, headers=auth["headers"])
+    assert updated.status_code == 200
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 def test_不正なリフレッシュトークンは401を返す(client):
     response = client.post("/auth/refresh", json={"refresh_token": "invalid-token"})
@@ -42,22 +65,17 @@ def test_期限切れのリフレッシュトークンは401(client, auth, conne
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert response.status_code == 401
 
+def test_リフレッシュトークンはログアウト後に401(client, auth):
+    logout = client.post("/auth/logout", json={"refresh_token": auth["refresh_token"]})
+    assert logout.status_code == 204
+    response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
+    assert response.status_code == 401
+
 def test_リフレッシュトークンはパスワード変更後に401(client, auth):
     updated = client.patch(f"/users/{auth['user_id']}", json={"password": "newpass123"}, headers=auth["headers"])
     assert updated.status_code == 200
     response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert response.status_code == 401
-
-def test_リフレッシュトークンは名前変更後も有効(client, auth):
-    updated = client.patch(f"/users/{auth['user_id']}", json={"name": "jiro"}, headers=auth["headers"])
-    assert updated.status_code == 200
-    response = client.post("/auth/refresh", json={"refresh_token": auth["refresh_token"]})
-    assert response.status_code == 200
-
-def test_リフレッシュトークンはDBにハッシュで保存される(client, auth, connection):
-    saved = connection.execute(select(RefreshTokens.token_hash)).scalar_one()
-    assert saved != auth["refresh_token"]
-    assert saved == hashlib.sha256(auth["refresh_token"].encode()).hexdigest()
 
 def test_不正なアクセストークンは401でWWW_Authenticateを返す(client):
     response = client.get("/users/me", headers={"Authorization": "Bearer invalid"})
