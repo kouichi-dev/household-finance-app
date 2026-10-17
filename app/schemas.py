@@ -2,12 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 from enum import Enum
 from datetime import datetime,date
 
-class RefreshTokenBody(BaseModel):
-    refresh_token: str
-
-class AccessTokenResponse(BaseModel):
-    access_token: str
-
+# ---- users ----
 class UserCreate(BaseModel):
     name: str = Field(max_length=20)
     email: EmailStr = Field(max_length=30)
@@ -23,6 +18,14 @@ class UserResponse(BaseModel):
     name: str
     email: str
 
+# ---- auth ----
+class RefreshTokenBody(BaseModel):
+    refresh_token: str
+
+class AccessTokenResponse(BaseModel):
+    access_token: str
+
+# ---- transactions ----
 class TransactionKind(str, Enum):
     income = 'income'
     expense = 'expense'
@@ -90,6 +93,7 @@ class TransactionSummaryResponse(BaseModel):
     by_category: list[CategorySummaryResponse]
     by_date: list[DateSummaryResponse]
 
+# ---- categories ----
 class CategoryCreate(BaseModel):
     name: str = Field(max_length=50)
 
