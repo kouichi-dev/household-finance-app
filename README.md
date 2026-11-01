@@ -61,7 +61,7 @@ docker compose up --build
 ### 画面での試し方
 
 `docs/frontend/` に、この API につながる画面があります。
-**この画面は、API の動作を確かめるために、生成 AI ですべて作成したものです。**
+API の動作を確かめるための画面です。
 
 ![月の画面](docs/frontend-month.png)
 
@@ -238,3 +238,10 @@ docker compose run --rm app pytest tests/
 
 テストDBは本番と同じ PostgreSQL（`household_test`）を使います。
 SQLite ではタイムゾーンや外部キー制約の挙動が PostgreSQL と異なるため、本番と揃えています。
+
+## 開発について
+
+生成 AI に教わりながら開発しました。
+バックエンドのコードは、生成 AI が書いたものと自分で書いたものが混ざっています。
+AI が書いたコードも、読んで理解し、必要に応じて自分で直しています。
+フロントエンド（`docs/frontend/`）は、API の動作を確かめるために生成 AI ですべて作成しました。
