@@ -186,7 +186,7 @@ erDiagram
         integer id PK
         integer user_id FK "削除時 CASCADE"
         varchar token_hash UK
-        boolean revoked "初期値 false"
+        boolean revoked "作成時にアプリが false"
         timestamptz expires_at
         timestamptz created_at
     }

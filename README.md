@@ -33,7 +33,7 @@
 git clone https://github.com/kouichi-dev/household-finance-app.git
 cd household-finance-app
 cp .env.example .env
-# .env を開き、CHANGE_ME の3箇所を実際の値に置き換える
+# .env を開き、CHANGE_ME の4箇所を実際の値に置き換える（DB のパスワード3箇所は同じ値にする）
 docker compose up --build
 ```
 
@@ -207,7 +207,7 @@ erDiagram
         integer id PK
         integer user_id FK "削除時 CASCADE"
         varchar token_hash UK
-        boolean revoked "初期値 false"
+        boolean revoked "作成時にアプリが false"
         timestamptz expires_at
         timestamptz created_at
     }
