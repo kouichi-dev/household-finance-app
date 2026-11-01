@@ -224,3 +224,4 @@ app/test.db
 test.db
 .claude/
 pytest
+backup/
