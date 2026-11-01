@@ -63,7 +63,7 @@ def test_他人のカテゴリは紐づけできない(client, auth):
 
 def test_収支一覧取得(client, auth):
     client.post("/transactions", json={"amount": 1000, "kind": "expense","transaction_date": "2026-06-15"}, headers=auth["headers"])
-    response = client.get("/transactions?page=1&limit=20&on=2026-06-15", headers=auth["headers"])
+    response = client.get("/transactions", params={"page": 1, "limit": 20, "on": "2026-06-15"}, headers=auth["headers"])
     assert response.status_code == 200
     assert len(response.json()["items"]) > 0
 
@@ -127,7 +127,7 @@ def test_収支一覧_年をまたいでも前後の期間が返る(client, auth
     assert response.json()["next_on"] == "2026-02-01"
 
 def test_不正なpageは422になる(client, auth):
-    response = client.get("/transactions?page=0", headers=auth["headers"])
+    response = client.get("/transactions", params={"page": 0}, headers=auth["headers"])
     assert response.status_code == 422
 
 def test_page上限超過は422になる(client, auth):
@@ -135,11 +135,11 @@ def test_page上限超過は422になる(client, auth):
     assert response.status_code == 422
 
 def test_limit下限未満は422になる(client, auth):
-    response = client.get("/transactions?limit=0", headers=auth["headers"])
+    response = client.get("/transactions", params={"limit": 0}, headers=auth["headers"])
     assert response.status_code == 422
 
 def test_limit上限超過は422になる(client, auth):
-    response = client.get("/transactions?limit=101", headers=auth["headers"])
+    response = client.get("/transactions", params={"limit": 101}, headers=auth["headers"])
     assert response.status_code == 422
 
 def test_onが下限未満は422になる(client, auth):
