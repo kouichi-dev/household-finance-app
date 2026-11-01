@@ -8,13 +8,13 @@ def test_収支登録(client, auth):
         "description": "ランチ",
         "transaction_date": "2026-06-15"
     }, headers=auth["headers"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["amount"] == 1000
 
 def test_収支登録_日付省略時に今日の日付が入る(client, auth):
     today = datetime.now(ZoneInfo("Asia/Tokyo")).date().isoformat()
     response = client.post("/transactions", json={"amount": 1000, "kind": "expense"}, headers=auth["headers"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["transaction_date"] == today
 
 # 自分のカテゴリなら正常に紐づく（正規フローが壊れてない確認）
@@ -24,7 +24,7 @@ def test_自分のカテゴリは紐づけできる(client, auth):
         "amount": 1000, "kind": "expense", "transaction_date": "2026-06-15",
         "category_id": category["id"]
     }, headers=auth["headers"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["category_id"] == category["id"]
 
 def test_負のamountは422(client, auth):

@@ -4,7 +4,7 @@ def test_ユーザー登録(client):
         "email": "taro@example.com",
         "password": "password123"
     })
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["email"] == "taro@example.com"
 
 def test_ユーザー登録_emailの形式が不正は422(client):

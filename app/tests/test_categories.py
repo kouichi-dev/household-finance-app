@@ -1,6 +1,6 @@
 def test_カテゴリ登録(client, auth):
     response = client.post("/categories", json={"name": "通信費"}, headers=auth["headers"])
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["name"] == "通信費"
 
 def test_カテゴリ登録_nameが51文字は422(client, auth):

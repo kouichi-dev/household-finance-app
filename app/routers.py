@@ -35,7 +35,7 @@ def verify_self(user_id: int, current_user = Depends(get_current_user)):
     return current_user
 
 # ---- users ----
-@router.post("/users", response_model=UserResponse)
+@router.post("/users", response_model=UserResponse, status_code=201)
 def create_user_endpoint(user:UserCreate, db: Session = DB_SESSION):
     return services.create_user(db,user)
 
@@ -70,7 +70,7 @@ def logout_endpoint(token: RefreshTokenBody, db: Session = DB_SESSION):
     services.revoke_refresh_token(db,token.refresh_token)
 
 # ---- transactions ----
-@router.post("/transactions",response_model=TransactionResponse)
+@router.post("/transactions",response_model=TransactionResponse, status_code=201)
 def create_transaction_endpoint(transaction: TransactionCreate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.create_transaction(db, current_user.id, transaction)
 
@@ -108,7 +108,7 @@ def delete_transaction_endpoint(transaction_id: int, current_user = Depends(get_
     services.delete_transaction(db, current_user.id, transaction_id)
 
 # ---- categories ----
-@router.post("/categories",response_model=CategoryResponse)
+@router.post("/categories",response_model=CategoryResponse, status_code=201)
 def create_category_endpoint(category: CategoryCreate, current_user = Depends(get_current_user), db: Session = DB_SESSION):
     return services.create_category(db,current_user.id,category)
 
