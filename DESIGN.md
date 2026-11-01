@@ -153,7 +153,44 @@
 - repository: DB操作
 
 ### ER図
-![ER図](docs/er-diagram.png)
+```mermaid
+erDiagram
+    users ||--o{ transactions : "user_id"
+    users ||--o{ categories : "user_id"
+    users ||--o{ refresh_tokens : "user_id"
+    categories |o--o{ transactions : "category_id"
+
+    users {
+        integer id PK
+        varchar name "20文字"
+        varchar email UK "30文字"
+        varchar password "ハッシュ"
+        timestamptz created_at
+    }
+    transactions {
+        integer id PK
+        integer user_id FK "削除時 CASCADE"
+        integer category_id FK "NULL可・削除時 SET NULL"
+        integer amount "0以上"
+        varchar description "NULL可・50文字"
+        varchar kind "income または expense"
+        date transaction_date
+        timestamptz created_at
+    }
+    categories {
+        integer id PK
+        integer user_id FK "削除時 CASCADE・name と組で一意"
+        varchar name "50文字"
+    }
+    refresh_tokens {
+        integer id PK
+        integer user_id FK "削除時 CASCADE"
+        varchar token_hash UK
+        boolean revoked "初期値 false"
+        timestamptz expires_at
+        timestamptz created_at
+    }
+```
 
 ### 技術選定理由
 - **FastAPI** : 型安全・自動ドキュメント生成・高速。FastAPIは学習済みであること、軽量で速く、このアプリの規模だと適していることから。
