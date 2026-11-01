@@ -58,6 +58,23 @@ docker compose up --build
 2. 右上の **Authorize** を押し、`username` にメールアドレス、`password` にパスワードを入れる
 3. 以降、認証が必要なエンドポイントをそのまま呼べる
 
+### 画面での試し方
+
+`docs/frontend/` に、この API につながる画面があります。
+**この画面は、API の動作を確かめるために、生成 AI ですべて作成したものです。**
+
+![月の画面](docs/frontend-month.png)
+
+```bash
+# docker compose up で API を起動したまま、別のターミナルで（Python 3.7 以上。標準ライブラリのみ）
+cd docs/frontend
+python serve.py   # 環境によっては python3 serve.py
+```
+
+http://localhost:5173 を開きます。
+`serve.py` は画面を配り、`/api/*` へのリクエストを API（localhost:8000）に中継します。
+画面と API が同じオリジンになるため、API 側に CORS の設定は要りません。
+
 ## エンドポイント一覧
 
 ![Swagger UI のエンドポイント一覧](docs/swagger-endpoints.png)
