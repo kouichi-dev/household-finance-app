@@ -96,7 +96,7 @@ def create_transaction(db: Session, user_id: int, transaction: TransactionCreate
     db.refresh(db_transaction)
     return db_transaction
 
-def build_filters(user_id: int, start: date | None, end: date | None, category_id, kind):
+def build_filters(user_id: int, start: date, end: date, category_id, kind):
     filters = [Transaction.user_id == user_id]
     if category_id == "none":
         filters.append(Transaction.category_id.is_(None))
@@ -104,9 +104,9 @@ def build_filters(user_id: int, start: date | None, end: date | None, category_i
         filters.append(Transaction.category_id == category_id)
     if kind is not None:
         filters.append(Transaction.kind == kind)
-    if start is not None:
-        filters.append(Transaction.transaction_date >= start)
-        filters.append(Transaction.transaction_date <= end)
+
+    filters.append(Transaction.transaction_date >= start)
+    filters.append(Transaction.transaction_date <= end)
     return filters
 
 def get_transactions(db: Session, user_id: int, page: int, limit: int, start: date, end: date, category_id, kind):
